@@ -32,9 +32,10 @@ COLOR = {'WHITE': (255, 255, 255),
 
 # -- Fonction --
 def get_font_size(font_height):
-    """récupère une valeur de taille de police selon `font_height` un entier
-    naturel représentant la hauteur de font voulu en nombre de pixel sur la
-    fenêtre de jeu."""
+    """
+    récupère une valeur de taille de police selon `font_height` un entier
+    représentant la hauteur de font voulu en nombre de pixel sur la fenêtre
+    """
     if font_height < 19:
         return 12
     else:
