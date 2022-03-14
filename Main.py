@@ -26,7 +26,9 @@ FONT_HEIGHT = [19, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 35, 37,
 
 COLOR = {'WHITE': (255, 255, 255),
          'BLUE': (0, 59, 111),
+         'DARK_BLUE': (0, 22, 43),
          'YELLOW': (255, 215, 0),
+         'DARK_YELLOW': (170, 145, 0),
          'RED': (207, 10, 29),
          'GREEN': (34, 120, 15)}
 
@@ -52,7 +54,7 @@ class Button:
     """
     crée un bouton visuel avec un bouton centré
     """
-    def __init__(self, window, relative_position, text, color=COLOR['BLUE']):
+    def __init__(self, window, relative_position, text, color=COLOR['YELLOW']):
         """
         Initialise le bouton avec comme argument:
         - 'window' qui correspond à la fenêtre sur laquel il va se générer
@@ -74,7 +76,7 @@ class Button:
         self.text = text
         self.color = color
         self.resize(window)
-    
+
     def resize(self, window):
         """
         Permet de redimensionner le bouton par rapport à la dimension
@@ -90,12 +92,12 @@ class Button:
         font = pygame.font.SysFont("Impact", font_size)
         self.text_image = font.render(self.text, 1, COLOR['WHITE'])
         self.text_pos = self.text_image.get_rect(center=self.rect.center)
-    
+
     def draw(self, surface):
         """
         Permet d'afficher le bouton sur la surface 'surface'
         """
-        pygame.draw.rect(surface, (0, 0, 0), self.rect)
+        pygame.draw.rect(surface, COLOR['DARK_YELLOW'], self.rect)
         pygame.draw.rect(surface, self.color, self.rect, 3)
         surface.blit(self.text_image, self.text_pos)
 
@@ -103,11 +105,11 @@ class Button:
         """
         Détecte si le bouton est pressé
         """
-        mouse = pygame.mouse.get_pos()
         dimension_x = self.x_value + self.w_value
         dimension_y = self.y_value + self.h_value
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
+                mouse = pygame.mouse.get_pos()
                 if self.x_value <= mouse[0] <= dimension_x and self.y_value <= mouse[1] <= dimension_y:
                     return True
         return False
@@ -118,34 +120,109 @@ def create_main_menu(window):
     """
     Mise en place de la logique du 'main_menu'
     """
-    play_button = Button(window, (0.1, 0.2, 0.1, 0.1), 'Play')
-    score_button = Button(window, (0.2, 0.2, 0.1, 0.1), 'Text')
-    play_button.draw(window)
-    score_button.draw(window)
+    play_button = Button(window, (0.35, 0.5, 0.3, 0.08), 'Jouer')
+    build_button = Button(window, (0.35, 0.6, 0.3, 0.08), 'Créer')
+    c_button = Button(window, (0.35, 0.7, 0.3, 0.08), 'C')
+    exit_button = Button(window, (0.35, 0.8, 0.3, 0.08), 'Quiter')
+
+    frame = pygame.Surface(window.get_size())
+    play_button.draw(frame)
+    build_button.draw(frame)
+    c_button.draw(frame)
+    exit_button.draw(frame)
+    window.blit(frame, (0, 0))
     pygame.display.flip()
-    return play_button, score_button
+    return play_button, build_button, c_button, exit_button
 
 
 def main_menu(window):
     """
     Affichage du 'main_menu'
     """
+    list_button_menu = create_main_menu(window)
     proceed = True
-    play_button, score_button = create_main_menu(window)
     while proceed:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
             if event.type == pygame.VIDEORESIZE:
+                print("resize")
                 window_w, window_h = window.get_size()
                 if window_w < 500 or window_h < 250:
                     window = pygame.display.set_mode((500, 250), pygame.RESIZABLE)
-                play_button, score_button = create_main_menu(window)
-            if play_button.is_pressed(event):
-                print("a")
-            if score_button.is_pressed(event):
-                print('b')
-        pygame.display.flip()
+                list_button_menu = create_main_menu(window)
+            if list_button_menu[0].is_pressed(event):
+                print("jouer")
+            if list_button_menu[1].is_pressed(event):
+                proceed = False
+                build_menu(window)
+            if list_button_menu[2].is_pressed(event):
+                print("c")
+            if list_button_menu[3].is_pressed(event):
+                pygame.quit()
+                return
+
+
+
+def create_build_menu(window):
+    """
+    Mise en place de la logique du 'build_menu'
+    """
+    return_button = Button(window, (0.05, 0.05, 0.1, 0.1), 'Retour')
+    less_button = Button(window, (0.3, 0.4, 0.1, 0.1), '-')
+    more_button = Button(window, (0.6, 0.4, 0.1, 0.1), '+')
+    enter_button = Button(window, (0.4, 0.6, 0.2, 0.1), 'Aller')
+
+    frame = pygame.Surface(window.get_size())
+    return_button.draw(frame)
+    less_button.draw(frame)
+    more_button.draw(frame)
+    enter_button.draw(frame)
+    window.blit(frame, (0, 0))
+    pygame.display.flip()
+    return return_button, less_button, more_button, enter_button
+
+def build_menu(window):
+    """
+    Affichage du 'build_menu'
+    """
+    list_button_build = create_build_menu(window)
+    proceed = True
+    while proceed:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+            if event.type == pygame.VIDEORESIZE:
+                print("resize")
+                window_w, window_h = window.get_size()
+                if window_w < 500 or window_h < 250:
+                    window = pygame.display.set_mode((500, 250), pygame.RESIZABLE)
+                list_button_build = create_build_menu(window)
+            # Bouton Retour
+            if list_button_build[0].is_pressed(event):
+                proceed = False
+                main_menu(window)
+            # Bouton Moins
+            if list_button_build[1].is_pressed(event):
+                print("Moins")
+            # Bouton Plus
+            if list_button_build[2].is_pressed(event):
+                print("Plus")
+            # Bouton Entrer
+            if list_button_build[3].is_pressed(event):
+                print("Aller")
+
+def temp():
+    liste = []
+    for ligne in range(10):
+        temp = []
+        for colonne in range(10):
+            temp.append('0')
+        liste.append(temp)
+    for l in liste:
+        print(l)
+
 
 main_menu(window)
