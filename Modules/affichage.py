@@ -1,8 +1,7 @@
-from ast import PyCF_ALLOW_TOP_LEVEL_AWAIT
 import pygame
 
-from Modules.fonction import GameStrings, Button, Button_grid, Text, Fence
-from Modules.fonction import write_game, create_new_grid
+from Modules.fonction import GameStrings, Button, Button_grid, Text, Fence, Line
+from Modules.fonction import write_game, create_new_grid, blit_grid, blit_level
 from Modules.constant import COLOR_TURN, LANG
 
 
@@ -34,7 +33,7 @@ def create_main_menu(window, color):
     return play_button, build_button, option_button, exit_button
 
 
-def main_menu(window, color):
+def main_menu(window, texture, color):
     """
     Affichage du 'main_menu'
     """
@@ -56,7 +55,7 @@ def main_menu(window, color):
             # Bouton Build
             if list_button_menu[1].is_pressed(event):
                 proceed = False
-                build_menu(window, color)
+                build_menu(window, texture, color)
             # Bouton Option
             if list_button_menu[2].is_pressed(event):
                 proceed = False
@@ -94,7 +93,7 @@ def create_build_menu(window, color, grid_size):
     pygame.display.flip()
     return return_button, less_button, more_button, enter_button
 
-def build_menu(window, color):
+def build_menu(window, texture, color):
     """
     Affichage du 'build_menu'
     """
@@ -114,65 +113,68 @@ def build_menu(window, color):
             # Bouton Retour
             if list_button_build[0].is_pressed(event):
                 proceed = False
-                main_menu(window, color)
+                main_menu(window, texture, color)
             # Bouton Moins
             if list_button_build[1].is_pressed(event):
-                if grid_size != 10:
+                if grid_size != 2:
                     grid_size -= 1
                     list_button_build = create_build_menu(window, color, grid_size)
             # Bouton Plus
             if list_button_build[2].is_pressed(event):
-                if grid_size != 20:
+                if grid_size != 30:
                     grid_size += 1
                     list_button_build = create_build_menu(window, color, grid_size)
             # Bouton Entrer
             if list_button_build[3].is_pressed(event):
                 proceed = False
-                tinker_menu(window, color, grid_size)
+                tinker_menu(window, texture, color, grid_size)
 
 
-def create_tinker_menu(window, color, grid):
+def create_tinker_menu(window, texture, color, grid):
     """
-    Mise en place de la logique du 'tinker_menu'
-    - 'grid' -> grid, grid_size
+    Mise en place de la logique du 'tinker_menu' avec:
+    - 'grid' un 2-uple:
+        - 'grid' la grille de jeu
+        - 'grid_size' le nombre de case dans une ligne de la grille de jeu
     """
     frame = pygame.Surface(window.get_size())
 
+    # Génère l'affichage du grillage
+    fence = Fence(window, grid[1])
+
+    # Prend la dimension en pixel du grillage
+    dimension_grid = fence.get_dimension_grid()
+
+    # Zone de détection du tableau
+    grid_button = Button_grid(window, dimension_grid, grid[1])
+
+    # Affiche le tableau avec les objets à l'intérieur
+    frame.blit(blit_grid(window, grid, dimension_grid, texture),
+                         (0, 0))
+
+    # Bouton retour
     return_button = Button(window, (0.05, 0.05, 0.1, 0.08),
                            game_strings.get_string('Return'), color[1])
     return_button.draw(frame)
 
-    fence = Fence(window, grid[1])
+    # Affichage du grillage
     fence.draw(frame)
 
-    dimension_grid = fence.get_dimension_grid()
-    grid_button = Button_grid(window, dimension_grid, grid[1])
-    print()
-
-    image = pygame.image.load("Image/Game/block.png").convert_alpha()
-    scale = int(dimension_grid // grid[1])
-    image = pygame.transform.scale(image, (scale, scale))
-    window_w, window_h = window.get_size()
-    for box in grid[0]:
-        coordonne_box = int(box) // grid[1], int(box) % grid[1]
-        x_coord = (window_w - dimension_grid) // 2
-        x_value = x_coord + (dimension_grid // grid[1]) * coordonne_box[1]
-        y_value = (dimension_grid // grid[1]) * coordonne_box[0]
-        if grid[0][box] == 1:
-            frame.blit(image, (x_value, y_value))
+    #Ligne numéro 1
+    blit_level(frame, color)
 
     window.blit(frame, (0, 0))
-    
+
     pygame.display.flip()
     return return_button, grid_button
 
 
-def tinker_menu(window, color, grid_size):
+def tinker_menu(window, texture, color, grid_size):
     """
     Affichage du 'tinker_menu'
     """
     grid = create_new_grid(grid_size)
-    list_button_tinker = create_tinker_menu(window, color, (grid, grid_size))
+    list_button_tinker = create_tinker_menu(window, texture, color, (grid, grid_size))
     proceed = True
     while proceed:
         for event in pygame.event.get():
@@ -183,25 +185,25 @@ def tinker_menu(window, color, grid_size):
                 window_w, window_h = window.get_size()
                 if window_w < 500 or window_h < 250:
                     window = pygame.display.set_mode((500, 250), pygame.RESIZABLE)
-                list_button_tinker = create_tinker_menu(window, color, (grid, grid_size))
+                list_button_tinker = create_tinker_menu(window, texture, color, (grid, grid_size))
             # Bouton Retour
             if list_button_tinker[0].is_pressed(event):
                 proceed = False
                 write_game("test", grid)
-                build_menu(window, color)
+                build_menu(window, texture, color)
             # Grille
             if list_button_tinker[1].is_pressed(event):
                 print("Oui")
                 coord = list_button_tinker[1].get_coord()
-                grid[str(coord)] = 1
-                list_button_tinker = create_tinker_menu(window, color, (grid, grid_size))
+                grid[str(coord)]+= 1
+                list_button_tinker = create_tinker_menu(window, texture, color, (grid, grid_size))
 
 def create_option_menu(window, color):
     """
     Mise en place de la logique du 'option_menu'
     """
     frame = pygame.Surface(window.get_size())
-    
+
     return_button = Button(window, (0.05, 0.05, 0.1, 0.08),
                            game_strings.get_string('Return'), color[1])
     return_button.draw(frame)
