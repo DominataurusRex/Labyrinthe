@@ -1,7 +1,20 @@
-from email.errors import NoBoundaryInMultipartDefect
+from tkinter import Y
 import pygame
 import json
 from Modules.constant import COLOR, FONT_HEIGHT
+
+
+def init_texture(window):
+    """
+    Permet d'initialiser les texture du jeu dans un dictionnaire
+    """
+    image = pygame.image.load("Image/Game/texture1.png").convert_alpha()
+    dimension = image.get_width()
+    texture = {}
+    for l in range(dimension // 32):
+        image_temp = image.subsurface((32 * l, 0, 32, 32))
+        texture[l] = image_temp
+    return texture
 
 def get_font_size(font_height):
     """
@@ -41,6 +54,42 @@ def create_new_grid(dimension):
         grid[str(box)] = 0
     return grid
 
+def blit_grid(window, grid, dimension_grid, texture):
+    """
+    Permet d'afficher la grille avec les objets
+    avec comme argument :
+    - 'window' la fenêtre sur laquel afficher la grille
+    - 'grid' un 2-uple:
+        - 'grid' la grille de jeu
+        - 'grid_size' le nombre de case dans une ligne de la grille de jeu
+    - 'dimension_grille' la taille de la grille en pixel
+    - 'texture' un dictionnaire contenant les textures du jeu
+    """
+    frame = pygame.Surface(window.get_size())
+    scale = int(dimension_grid // grid[1])
+    window_w, window_h = window.get_size()
+    for box in grid[0]:
+        coordonne_box = int(box) // grid[1], int(box) % grid[1]
+        x_coord = (window_w - dimension_grid) / 2
+        x_value = int(x_coord + (dimension_grid / grid[1]) * coordonne_box[1])
+        y_value = int((dimension_grid / grid[1]) * coordonne_box[0])
+        if grid[0][box] != 0:
+            image = pygame.transform.scale(texture[grid[0][box] - 1], (scale, scale))
+            frame.blit(image, (x_value, y_value))
+    return frame
+
+def blit_level(surface, color):
+    """
+    Permet d'afficher l'affichage des niveaux en commun
+    """
+    line_1 = Line(surface, (0, 0.7, 1, 0.7), color[1])
+    line_1.draw(surface)
+    line_2 = Line(surface, (0.2, 0, 0.2, 0.7), color[1])
+    line_2.draw(surface)
+    line_3 = Line(surface, (0.8, 0, 0.8, 0.7), color[1])
+    line_3.draw(surface)
+
+
 
 class GameStrings:
     """
@@ -64,6 +113,7 @@ class GameStrings:
         Permet de récupérer toutes les chaines de caractères.
         """
         return self.data
+
 
 class Button:
     """
@@ -105,7 +155,8 @@ class Button:
         self.y_value = round(self.relative_position[1] * window_h)
         self.w_value = round(self.relative_position[2] * window_w)
         self.h_value = round(self.relative_position[3] * window_h)
-        self.rect = pygame.Rect(self.x_value, self.y_value, self.w_value, self.h_value)
+        self.rect = pygame.Rect(self.x_value, self.y_value,
+                                self.w_value, self.h_value)
         font_size = get_font_size(round(self.rect.h * 0.6))
         font = pygame.font.SysFont("Impact", font_size)
         self.text_image = font.render(self.text, 1, COLOR['WHITE'])
@@ -131,6 +182,7 @@ class Button:
                 if self.x_value <= mouse[0] <= dimension_x and self.y_value <= mouse[1] <= dimension_y:
                     return True
         return False
+
 
 class Button_grid:
     """
@@ -170,19 +222,20 @@ class Button_grid:
                 if self.x_value <= self.mouse[0] <= dimension_x and self.y_value <= self.mouse[1] <= dimension_y:
                     return True
         return False
-    
+
     def get_coord(self):
         """
         Permet de récuperer le numéro de la case cliqué
         """
-        box_dimension = self.dimension_grid // self.grid_size
-        coord_x = ((self.mouse[0] - self.x_value) // box_dimension)
+        box_dimension = self.dimension_grid / self.grid_size
+        coord_x = ((self.mouse[0] - self.x_value) / box_dimension)
         if coord_x > self.grid_size - 1:
             coord_x = self.grid_size - 1
         coord_y = self.mouse[1] // box_dimension
         if coord_y > self.grid_size - 1:
             coord_y = self.grid_size - 1
         return int(coord_x + coord_y * self.grid_size)
+
 
 class Text:
     """
@@ -203,7 +256,7 @@ class Text:
             - 'h' correspond à la hauteur du texte par rapport à la
                 hauteur de la fenêtre
                 0 -> texte inexistant / 1 -> hauteur de la fenêtre
-        - 'text' correspond au texte qui doit être affiché, il 
+        - 'text' correspond au texte qui doit être affiché, il
             doit être sous forme d'une chaîne de caractère
         """
         self.relative_position = relative_position
@@ -220,7 +273,8 @@ class Text:
         self.y_value = round(self.relative_position[1] * window_h)
         self.w_value = round(self.relative_position[2] * window_w)
         self.h_value = round(self.relative_position[3] * window_h)
-        self.rect = pygame.Rect(self.x_value, self.y_value, self.w_value, self.h_value)
+        self.rect = pygame.Rect(self.x_value, self.y_value,
+                                self.w_value, self.h_value)
         font_size = get_font_size(round(self.rect.h * 0.6))
         font = pygame.font.SysFont("Impact", font_size)
         self.text_image = font.render(self.text, 1, COLOR['WHITE'])
@@ -231,7 +285,6 @@ class Text:
         Permet d'afficher le texte sur la surface 'surface'
         """
         surface.blit(self.text_image, self.text_pos)
-
 
 
 class Fence:
@@ -248,7 +301,7 @@ class Fence:
         """
         self.nbr_box = nbr_box
         self.resize(window)
-    
+
     def resize(self, window):
         """
         - Permet de centré la quadrillage carré au milieu de la longueur en haut
@@ -259,59 +312,76 @@ class Fence:
         """
         window_w, window_h = window.get_size()
         # Permet de déterminer le côté le plus petit pour la quadrillage
-        if window_w * 0.6 < window_h * 0.8:
-            self.dimension_grid = (window_w * 0.6) // 1
+        if window_w * 0.6 < window_h * 0.7:
+            self.dimension_grid = (window_w * 0.6)
         else:
-            self.dimension_grid = (window_h * 0.8) // 1
+            self.dimension_grid = (window_h * 0.7)
         # Permet de savoir le côté des cases du quadrillage
-        self.dimension_box = self.dimension_grid // self.nbr_box
+        self.dimension_box = self.dimension_grid / self.nbr_box
         # Permet de savoir l'abscisse d'origine du quadrillage
-        self.x_value = ((window_w - self.dimension_grid) // 2)
-    
+        self.start_grid = ((window_w - self.dimension_grid) / 2)
+
     def draw(self, frame):
         """
-        Permet d'afficher le quadrillage en dessinant chaque case
+        Permet d'afficher le quadrillage en dessinant les lignes
         """
-        for lenght in range(self.nbr_box):
-            # Modifie la valeur de x des cases
-            y_value = 0
-            for height in range(self.nbr_box):
-                # Modifie la valeur de y pour les cases
-                self.rect = pygame.Rect(self.x_value, y_value, self.dimension_box, self.dimension_box)
-                pygame.draw.rect(frame,COLOR['GRAY'], self.rect, 1)
-                y_value += self.dimension_box
-            self.x_value += self.dimension_box
-    
+        x_value = self.start_grid
+        y_value = 0
+        for i in range(self.nbr_box + 1):
+            # Trace les lignes du quadrillage
+            self.rect_start1 = x_value, 0
+            self.rect_finish1 = x_value, 0 + self.dimension_grid
+            self.rect_start2 = self.start_grid , y_value
+            self.rect_finish2 = self.start_grid + self.dimension_grid, y_value
+            pygame.draw.line(frame, COLOR['GRAY'], self.rect_start1
+                                                 , self.rect_finish1, 3)
+            pygame.draw.line(frame, COLOR['GRAY'], self.rect_start2
+                                                 , self.rect_finish2, 3)
+            x_value += self.dimension_box
+            y_value += self.dimension_box
+
     def get_dimension_grid(self):
         """
         Permet de récupérer la dimension du quadrillage
         """
         return self.dimension_grid
-    
 
-class Grid:
+
+class Line:
     """
-    Créer un niveau
+    Créer un ligne
     """
-    def __init__(self, window, grid, dimension_grid, grid_size):
+    def __init__(self, window, relative_position, color):
         """
-        Initialise un niveau avec comme argument:
-        - 'window' qui correspond à la fenêtre sur lequel le
-            niveau s'affiche
-        - 'grid' le dictionnaire qui correspond au niveau
-        - 'dimension_grid' qui corrspond à la taille du tableau
-            au final
-        - 'grid_size' qui correspond au nombre de case de côté
+        Initialise une ligne avec comme argument:
+        - 'window' qui correspond à la fenêtre sur lequel la ligne s'affiche
+        - 'relative_position' un 4-uple (x, y, w, h):
+            - 'x' la position de départ par rapport à la largeur de la fenêtre
+            - 'y' la position de départ par rapport à la hauteur de la fenêtre
+            - 'w' la position d'arrivée par rapport à la largeur de la fenêtre
+            - 'h' la position d'arrivée par rapport à la hauteur de la fenêtre
+        - 'color' la clé de la couleur du dico COLOR
         """
-        self.window = window
-        self.grid = grid
-        self.dimension_grid = dimension_grid
-        self.grid_size = grid_size
+        self.relative_position = relative_position
+        self.color = COLOR['DARK_' + color]
         self.resize(window)
-    
+
     def resize(self, window):
+        """
+        Permet de redimensionner et de placer la ligne par rapport à la fenêtre
+        'window'
+        """
         window_w, window_h = window.get_size()
-        self.x_value = (window_w - self.dimension_grid) // 2
-        self.y_value = 0
-        self.w_value = self.dimension_grid // self.grid_size
-        self.h_value = self.dimension_grid // self.grid_size
+        self.x_value = round(self.relative_position[0] * window_w)
+        self.y_value = round(self.relative_position[1] * window_h)
+        self.w_value = round(self.relative_position[2] * window_w)
+        self.h_value = round(self.relative_position[3] * window_h)
+        self.rect_start = self.x_value, self.y_value
+        self.rect_finish = self.w_value, self.h_value
+
+    def draw(self, surface):
+        """
+        Permet d'afficher le bouton sur la surface 'surface'
+        """
+        pygame.draw.line(surface, self.color,
+                         self.rect_start, self.rect_finish, 3)
