@@ -1,4 +1,4 @@
-import json
+import pygame
 
 COLOR = {'BLUE': (0, 59, 111),
          'DARK_BLUE': (0, 22, 43),
@@ -9,7 +9,8 @@ COLOR = {'BLUE': (0, 59, 111),
          'RED': (207, 10, 29),
          'DARK_RED': (101, 5, 15),
          'WHITE': (255, 255, 255),
-         'GRAY': (96, 96, 96)}
+         'GRAY': (96, 96, 96),
+         'DARK_GRAY': (47, 47, 47)}
 
 COLOR_TURN = ['GREEN', 'YELLOW', 'RED', 'BLUE']
 
@@ -33,6 +34,13 @@ FONT_HEIGHT = [19, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 35, 37,
                279, 280, 282, 284, 285, 287, 288, 290, 291, 293, 294,
                296, 297, 299, 300]
 
-
-
-
+# Initialise les images
+def image_init():
+    image = pygame.image.load("Image/Game/texture1.png")
+    dimension = image.get_width()
+    texture = {}
+    for l in range(dimension // 32):
+        image_temp = image.subsurface((32 * l, 0, 32, 32))
+        texture[l] = image_temp
+    return texture
+TEXTURE = image_init()

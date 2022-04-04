@@ -1,20 +1,7 @@
-from tkinter import Y
 import pygame
 import json
 from Modules.constant import COLOR, FONT_HEIGHT
 
-
-def init_texture(window):
-    """
-    Permet d'initialiser les texture du jeu dans un dictionnaire
-    """
-    image = pygame.image.load("Image/Game/texture1.png").convert_alpha()
-    dimension = image.get_width()
-    texture = {}
-    for l in range(dimension // 32):
-        image_temp = image.subsurface((32 * l, 0, 32, 32))
-        texture[l] = image_temp
-    return texture
 
 def get_font_size(font_height):
     """
@@ -75,7 +62,7 @@ def blit_grid(window, grid, dimension_grid, texture):
         y_value = int((dimension_grid / grid[1]) * coordonne_box[0])
         if grid[0][box] != 0:
             image = pygame.transform.scale(texture[grid[0][box] - 1], (scale, scale))
-            frame.blit(image, (x_value, y_value))
+            frame.blit(image, (x_value + 1, y_value + 1))
     return frame
 
 def blit_level(surface, color):
@@ -89,6 +76,13 @@ def blit_level(surface, color):
     line_3 = Line(surface, (0.8, 0, 0.8, 0.7), color[1])
     line_3.draw(surface)
 
+def create_button_tinker(surface):
+    """
+    O
+    """
+    button1 = Button(surface, (0.8, 0.8, 0.1, 0.1), "1", "GRAY")
+    button1.draw(surface)
+    return button1
 
 
 class GameStrings:
@@ -186,7 +180,7 @@ class Button:
 
 class Button_grid:
     """
-    crée un bouton invisible
+    Crée un bouton invisible de la taille de la grille
     """
     def __init__(self, window, dimension_grid, grid_size):
         """
@@ -237,6 +231,49 @@ class Button_grid:
         return int(coord_x + coord_y * self.grid_size)
 
 
+class Button_image:
+    """
+    Permet de créer un bouton de forme carré avec une image
+    """
+    def __init__(self, window, relative_position, image, color='GRAY'):
+        """Initialise le bouton avec comme argument:
+        - 'window' qui correspond à la fenêtre sur laquel il va se générer
+        - 'relative_position' un 3-uple (x, y, w)
+            - 'x' la position x par rapport à la largeur de la fenêtre
+                0 -> à gauche / 1 -> à droite (sortit de fenêtre)
+            - 'y' la position y par rapport à la hauteur de la fenêtre
+                0 -> en haut / 1 -> en bas (sortit de fenêtre)
+            - 'w' correspond à la longueur du côté du bouton par rapport
+                à la largeur ou à la hauteur de la fenêtre
+                (au plus petit des deux)
+        """
+        self.relative_position = relative_position
+        self.image = image
+        self.color = COLOR[color]
+        self.resize(window)
+    
+    def resize(self, window):
+        """
+        Permet de redimensionner le bouton carré et l'image
+        par rapport au dimension de la fenêtre 'window' 
+        """
+        window_w, window_h = window.get_size()
+        self.x_value = round(self.relative_position[0] * window_w)
+        self.y_value = round(self.relative_position[1] * window_h)
+        self.w_value = round(self.relative_position[2] * window_w)
+        self.rect = pygame.Rect(self.x_value, self.y_value,
+                                self.w_value, self.w_value)
+        scale = self.w_value
+        self.image = pygame.transform.scale(self.image, (scale, scale))
+    
+    def draw(self, surface):
+        """
+        Permet d'afficher le bouton carré avec l'image
+        """
+        surface.blit(self.image, (self.x_value, self.y_value))
+        pygame.draw.rect(surface, self.color, self.rect, 3)
+
+
 class Text:
     """
     crée un texte centré
@@ -265,7 +302,7 @@ class Text:
 
     def resize(self, window):
         """
-        Permet de redimensionner le bouton par rapport à la dimension
+        Permet de redimensionner le texte par rapport à la dimension
         de la fenêtre 'window'
         """
         window_w, window_h = window.get_size()
@@ -329,14 +366,14 @@ class Fence:
         y_value = 0
         for i in range(self.nbr_box + 1):
             # Trace les lignes du quadrillage
-            self.rect_start1 = x_value, 0
-            self.rect_finish1 = x_value, 0 + self.dimension_grid
-            self.rect_start2 = self.start_grid , y_value
-            self.rect_finish2 = self.start_grid + self.dimension_grid, y_value
-            pygame.draw.line(frame, COLOR['GRAY'], self.rect_start1
-                                                 , self.rect_finish1, 3)
-            pygame.draw.line(frame, COLOR['GRAY'], self.rect_start2
-                                                 , self.rect_finish2, 3)
+            self.line_start1 = x_value, 0
+            self.line_finish1 = x_value, 0 + self.dimension_grid
+            self.line_start2 = self.start_grid , y_value
+            self.line_finish2 = self.start_grid + self.dimension_grid, y_value
+            pygame.draw.line(frame, COLOR['DARK_GRAY'], self.line_start1
+                                                      , self.line_finish1, 2)
+            pygame.draw.line(frame, COLOR['DARK_GRAY'], self.line_start2
+                                                      , self.line_finish2, 2)
             x_value += self.dimension_box
             y_value += self.dimension_box
 
@@ -381,7 +418,7 @@ class Line:
 
     def draw(self, surface):
         """
-        Permet d'afficher le bouton sur la surface 'surface'
+        Permet d'afficher la ligne sur la surface 'surface'
         """
         pygame.draw.line(surface, self.color,
                          self.rect_start, self.rect_finish, 3)

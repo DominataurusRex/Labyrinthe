@@ -1,10 +1,11 @@
 {"Play": "Jouer",
  "Create": "Créer",
  "Option": "Option",
+ "Other": "Autre",
  "Quit": "Quitter",
  "Return": "Retour",
  "BLUE": "Bleu",
  "GREEN": "Vert",
  "YELLOW": "Jaune",
  "RED": "Rouge",
- "Button_color": "Couleur des boutons :"}
+ "Color": "Couleur - "}
