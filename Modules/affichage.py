@@ -1,6 +1,6 @@
 import pygame
 from Modules.fonction import GameStrings, Button, Button_grid, Button_image, Text, Fence
-from Modules.fonction import write_game, create_new_grid, blit_grid, blit_level
+from Modules.fonction import write_game, create_new_grid, blit_grid, blit_level, create_button_tinker
 from Modules.constant import COLOR_TURN, LANG, TEXTURE
 
 
@@ -39,7 +39,6 @@ def create_main_menu(window, color):
     pygame.display.flip()
     return play_button, build_button, color_button, other_button, exit_button
 
-
 def main_menu(window, color):
     """
     Affichage du 'main_menu'
@@ -58,7 +57,8 @@ def main_menu(window, color):
                 list_button_menu = create_main_menu(window, color)
             # Bouton Jouer
             if list_button_menu[0].is_pressed(event):
-                print("jouer")
+                play_menu(window, color)
+                create_main_menu(window, color)
             # Bouton Build
             if list_button_menu[1].is_pressed(event):
                 build_menu(window, color)
@@ -75,6 +75,42 @@ def main_menu(window, color):
                 pygame.quit()
                 return
 
+
+def create_play_menu(window, color):
+    """
+    Mise en place de la logique du 'play_menu' avec:
+    - 'window' la fenêtre
+    - 'color' la couleur
+    """
+    frame = pygame.Surface(window.get_size())
+
+    return_button = Button(window, (0.05, 0.05, 0.1, 0.08),
+                           game_strings.get_string('Return'), color[1])
+    return_button.draw(frame)
+    
+    window.blit(frame, (0, 0))
+    pygame.display.flip()
+    return return_button, None
+
+def play_menu(window, color):
+    """
+    Affichage du 'play_menu'
+    """
+    list_play_menu = create_play_menu(window, color)
+    proceed = True
+    while proceed:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+            if event.type == pygame.VIDEORESIZE:
+                window_w, window_h = window.get_size()
+                if window_w < 500 or window_h < 250:
+                    window = pygame.display.set_mode((500, 250), pygame.RESIZABLE)
+                list_play_menu = create_play_menu(window, color)
+            # Bouton Quitter
+            if list_play_menu[0].is_pressed(event):
+                proceed = False
 
 
 def create_build_menu(window, color, grid_size):
@@ -155,13 +191,10 @@ def create_tinker_menu(window, color, grid):
 
     # Génère l'affichage du grillage
     fence = Fence(window, grid[1])
-
     # Prend la dimension en pixel du grillage
     dimension_grid = fence.get_dimension_grid()
-
     # Zone de détection du tableau
     grid_button = Button_grid(window, dimension_grid, grid[1])
-
     # Affiche le tableau avec les objets à l'intérieur
     frame.blit(blit_grid(window, grid, dimension_grid, TEXTURE),
                          (0, 0))
@@ -178,13 +211,12 @@ def create_tinker_menu(window, color, grid):
     blit_level(frame, color)
 
     # Bouton des blocs
-    button1 = Button_image(frame, (0.8, 0.8, 0.1), TEXTURE[1])
-    button1.draw(frame)
+    button_block = create_button_tinker(frame)
 
     window.blit(frame, (0, 0))
 
     pygame.display.flip()
-    return return_button, grid_button
+    return return_button, grid_button, button_block
 
 
 def tinker_menu(window, color, grid_size):
@@ -194,6 +226,7 @@ def tinker_menu(window, color, grid_size):
     grid = create_new_grid(grid_size)
     list_button_tinker = create_tinker_menu(window, color, (grid, grid_size))
     proceed = True
+    rajout_case = 0
     while proceed:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -212,6 +245,15 @@ def tinker_menu(window, color, grid_size):
             if list_button_tinker[1].is_pressed(event):
                 print("Oui")
                 coord = list_button_tinker[1].get_coord()
-                grid[str(coord)]+= 1
+                if grid[str(coord)] == 0:
+                    grid[str(coord)] = rajout_case
+                else:
+                    grid[str(coord)] = 0
                 list_button_tinker = create_tinker_menu(window, color, (grid, grid_size))
-
+            # Button
+            list_touch = list_button_tinker[2]
+            place = 1
+            for button in list_touch:
+                if button.is_pressed(event):
+                    rajout_case = place
+                place += 1

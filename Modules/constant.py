@@ -10,7 +10,8 @@ COLOR = {'BLUE': (0, 59, 111),
          'DARK_RED': (101, 5, 15),
          'WHITE': (255, 255, 255),
          'GRAY': (96, 96, 96),
-         'DARK_GRAY': (47, 47, 47)}
+         'DARK_GRAY': (47, 47, 47),
+         'BLACK': (0, 0, 0)}
 
 COLOR_TURN = ['GREEN', 'YELLOW', 'RED', 'BLUE']
 
@@ -37,10 +38,14 @@ FONT_HEIGHT = [19, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 35, 37,
 # Initialise les images
 def image_init():
     image = pygame.image.load("Image/Game/texture1.png")
-    dimension = image.get_width()
+    x_value = image.get_width()
+    y_value = image.get_height()
+    place = 0
     texture = {}
-    for l in range(dimension // 32):
-        image_temp = image.subsurface((32 * l, 0, 32, 32))
-        texture[l] = image_temp
+    for height in range(y_value // 32):
+        for width in range(x_value // 32):
+            image_temp = image.subsurface((32 * width, 32 * height, 32, 32))
+            texture[place] = image_temp
+            place += 1
     return texture
 TEXTURE = image_init()

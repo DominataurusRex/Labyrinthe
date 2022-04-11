@@ -1,6 +1,6 @@
 import pygame
 import json
-from Modules.constant import COLOR, FONT_HEIGHT
+from Modules.constant import COLOR, FONT_HEIGHT, TEXTURE
 
 
 def get_font_size(font_height):
@@ -78,11 +78,22 @@ def blit_level(surface, color):
 
 def create_button_tinker(surface):
     """
-    O
+    Permet d'afficher le boutons permettant de choisir
+    ce que l'on souhaite placer dans la grille
     """
-    button1 = Button(surface, (0.8, 0.8, 0.1, 0.1), "1", "GRAY")
-    button1.draw(surface)
-    return button1
+    longueur = len(TEXTURE)
+    lenght = 0
+    button_return = []
+    for i in range(3):
+        y_value = 0.735 + ((0.045 + 0.04) * i)
+        for j in range(20):
+            x_value = 0.025 + ((0.025 + 0.04) * j)
+            button = Button_image(surface, (x_value, y_value, 0.04), TEXTURE[lenght])
+            button.draw(surface)
+            button_return.append(button)
+            lenght = lenght + 1
+            if lenght >= longueur:
+                return button_return
 
 
 class GameStrings:
@@ -235,7 +246,7 @@ class Button_image:
     """
     Permet de créer un bouton de forme carré avec une image
     """
-    def __init__(self, window, relative_position, image, color='GRAY'):
+    def __init__(self, window, relative_position, image, color='DARK_GRAY'):
         """Initialise le bouton avec comme argument:
         - 'window' qui correspond à la fenêtre sur laquel il va se générer
         - 'relative_position' un 3-uple (x, y, w)
@@ -271,7 +282,20 @@ class Button_image:
         Permet d'afficher le bouton carré avec l'image
         """
         surface.blit(self.image, (self.x_value, self.y_value))
-        pygame.draw.rect(surface, self.color, self.rect, 3)
+        pygame.draw.rect(surface, self.color, self.rect, 2)
+    
+    def is_pressed(self, event):
+        """
+        Détecte si le bouton est pressé
+        """
+        dimension_x = self.x_value + self.w_value
+        dimension_y = self.y_value + self.w_value
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                mouse = pygame.mouse.get_pos()
+                if self.x_value <= mouse[0] <= dimension_x and self.y_value <= mouse[1] <= dimension_y:
+                    return True
+        return False
 
 
 class Text:
@@ -370,10 +394,10 @@ class Fence:
             self.line_finish1 = x_value, 0 + self.dimension_grid
             self.line_start2 = self.start_grid , y_value
             self.line_finish2 = self.start_grid + self.dimension_grid, y_value
-            pygame.draw.line(frame, COLOR['DARK_GRAY'], self.line_start1
-                                                      , self.line_finish1, 2)
-            pygame.draw.line(frame, COLOR['DARK_GRAY'], self.line_start2
-                                                      , self.line_finish2, 2)
+            pygame.draw.line(frame, COLOR['BLACK'], self.line_start1
+                                                      , self.line_finish1, 1)
+            pygame.draw.line(frame, COLOR['BLACK'], self.line_start2
+                                                      , self.line_finish2, 1)
             x_value += self.dimension_box
             y_value += self.dimension_box
 
