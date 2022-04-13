@@ -1,5 +1,6 @@
 import pygame
 import json
+from math import sqrt
 from Modules.constant import COLOR, FONT_HEIGHT, TEXTURE
 
 
@@ -19,17 +20,30 @@ def get_font_size(font_height):
             pass
         return i + 12
 
-def write_game(name, grid):
+def save_game(name, grid):
     """
     Permet de sauvegarder 'grid' de forme dico en format json
-    dans l'emplacement 'Others/Game_save/'name'.json,
+    dans l'emplacement 'Others/Game_save/'name'.json',
     avec'name' le dossier d'arriver
     """
-    fileName = "Others/Game_save/" + name + ".json"
+    filename = "Others/Game_save/" + name + ".json"
 
-    with open(fileName, "w") as file:
+    with open(filename, "w") as file:
         json.dump(grid, file)
     file.close()
+
+def load_game(name):
+    """
+    Permet de charger le dico stocker en format json
+    de la grille 'name' dans l'emplacement
+    'Others/Game_save/'name'.json'
+    """
+    filename = "Others/Game_save/" + name + ".json"
+
+    with open(filename) as file:
+        dict_grid = json.load(file)
+    file.close()
+    return dict_grid
 
 def create_new_grid(dimension):
     """
@@ -41,33 +55,44 @@ def create_new_grid(dimension):
         grid[str(box)] = 0
     return grid
 
-def blit_grid(window, grid, dimension_grid, texture):
+def get_dimension_grid(window):
+    """
+    Permet de déterminer le côté le plus petit
+    pour afficher la grille de jeu
+    """
+    window_w, window_h = window.get_size()
+    if window_w * 0.6 < window_h * 0.7:
+        return (window_w * 0.6)
+    else:
+        return (window_h * 0.7)
+
+def blit_grid(window, grid, dimension_grid):
     """
     Permet d'afficher la grille avec les objets
     avec comme argument :
     - 'window' la fenêtre sur laquel afficher la grille
-    - 'grid' un 2-uple:
-        - 'grid' la grille de jeu
-        - 'grid_size' le nombre de case dans une ligne de la grille de jeu
+    - 'grid' la grille de jeu
     - 'dimension_grille' la taille de la grille en pixel
-    - 'texture' un dictionnaire contenant les textures du jeu
     """
     frame = pygame.Surface(window.get_size())
-    scale = int(dimension_grid // grid[1])
+    grid_size = int(sqrt(len(grid)))
+    scale = int(dimension_grid // grid_size)
     window_w, window_h = window.get_size()
-    for box in grid[0]:
-        coordonne_box = int(box) // grid[1], int(box) % grid[1]
+    for box in grid:
+        coordonne_box = int(box) // grid_size, int(box) % grid_size
         x_coord = (window_w - dimension_grid) / 2
-        x_value = int(x_coord + (dimension_grid / grid[1]) * coordonne_box[1])
-        y_value = int((dimension_grid / grid[1]) * coordonne_box[0])
-        if grid[0][box] != 0:
-            image = pygame.transform.scale(texture[grid[0][box] - 1], (scale, scale))
+        x_value = int(x_coord + (dimension_grid / grid_size) * coordonne_box[1])
+        y_value = int((dimension_grid / grid_size) * coordonne_box[0])
+        if grid[box] != 0:
+            image = pygame.transform.scale(TEXTURE[grid[box] - 1], (scale, scale))
             frame.blit(image, (x_value + 1, y_value + 1))
+    fence = Fence(window, int(sqrt(len(grid))), dimension_grid)
+    fence.draw(frame)
     return frame
 
-def blit_level(surface, color):
+def blit_appearance(surface, color):
     """
-    Permet d'afficher l'affichage des niveaux en commun
+    Permet d'afficher l'affichage utilisé pour différente raison
     """
     line_1 = Line(surface, (0, 0.7, 1, 0.7), color[1])
     line_1.draw(surface)
@@ -202,7 +227,7 @@ class Button_grid:
         - 'grid_size' qui correspond au nombre de case qu'il y a par côté
         """
         self.dimension_grid = dimension_grid
-        self.grid_size = grid_size
+        self.grid_size = int(sqrt(len(grid_size)))
         self.resize(window)
 
     def resize(self, window):
@@ -353,7 +378,7 @@ class Fence:
     Génère un quadrillage centré horizontalement et en haut de la fenêtre
     dans une zone précise
     """
-    def __init__(self, window, nbr_box):
+    def __init__(self, window, nbr_box, dimension_grid):
         """
         Initialise un quadrillage de forme carré avec comme argument
         - 'window' qui correspond à la fenêtre sur laquel il va se générer
@@ -361,6 +386,7 @@ class Fence:
             doit comporter sur un côté
         """
         self.nbr_box = nbr_box
+        self.dimension_grid = dimension_grid
         self.resize(window)
 
     def resize(self, window):
@@ -372,11 +398,6 @@ class Fence:
             longueur du côté et l'emplacement du quadrillage
         """
         window_w, window_h = window.get_size()
-        # Permet de déterminer le côté le plus petit pour la quadrillage
-        if window_w * 0.6 < window_h * 0.7:
-            self.dimension_grid = (window_w * 0.6)
-        else:
-            self.dimension_grid = (window_h * 0.7)
         # Permet de savoir le côté des cases du quadrillage
         self.dimension_box = self.dimension_grid / self.nbr_box
         # Permet de savoir l'abscisse d'origine du quadrillage
@@ -400,6 +421,9 @@ class Fence:
                                                       , self.line_finish2, 1)
             x_value += self.dimension_box
             y_value += self.dimension_box
+        pygame.draw.rect(frame, COLOR['DARK_GRAY'],
+                         (self.start_grid, 0,
+                         self.dimension_grid, self.dimension_grid), 1)
 
     def get_dimension_grid(self):
         """
