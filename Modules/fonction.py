@@ -84,7 +84,7 @@ def blit_grid(window, grid, dimension_grid):
         x_value = int(x_coord + (dimension_grid / grid_size) * coordonne_box[1])
         y_value = int((dimension_grid / grid_size) * coordonne_box[0])
         if grid[box] != 0:
-            image = pygame.transform.scale(TEXTURE[grid[box] - 1], (scale, scale))
+            image = pygame.transform.scale(TEXTURE[grid[box]], (scale, scale))
             frame.blit(image, (x_value + 1, y_value + 1))
     fence = Fence(window, int(sqrt(len(grid))), dimension_grid)
     fence.draw(frame)
@@ -106,8 +106,8 @@ def create_button_tinker(surface):
     Permet d'afficher le boutons permettant de choisir
     ce que l'on souhaite placer dans la grille
     """
-    longueur = len(TEXTURE)
-    lenght = 0
+    longueur = len(TEXTURE) - 3
+    lenght = 1
     button_return = []
     for i in range(3):
         y_value = 0.735 + ((0.045 + 0.04) * i)
@@ -119,6 +119,17 @@ def create_button_tinker(surface):
             lenght = lenght + 1
             if lenght >= longueur:
                 return button_return
+
+def play_game(name):
+    """
+    O
+    """
+    grid = load_game(name)
+    for key in grid:
+        if grid[key] == 1:
+            grid[key] = 'down'
+    return grid
+
 
 
 class GameStrings:

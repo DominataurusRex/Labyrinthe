@@ -36,16 +36,22 @@ FONT_HEIGHT = [19, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 35, 37,
                296, 297, 299, 300]
 
 # Initialise les images
-def image_init():
-    image = pygame.image.load("Image/Game/texture1.png")
+def level_init():
+    image = pygame.image.load("Image/level_texture.png")
     x_value = image.get_width()
     y_value = image.get_height()
-    place = 0
+    place = 1
     texture = {}
     for height in range(y_value // 32):
         for width in range(x_value // 32):
             image_temp = image.subsurface((32 * width, 32 * height, 32, 32))
             texture[place] = image_temp
             place += 1
+    image_charac = pygame.image.load("Image/character.png")
+    texture['down'] = image_charac.subsurface((0, 0, 32, 32))
+    texture['left'] = image_charac.subsurface((32, 0, 32, 32))
+    texture['right'] = image_charac.subsurface((0, 32, 32, 32))
+    texture['up'] = image_charac.subsurface((32, 32, 32, 32))
     return texture
-TEXTURE = image_init()
+    
+TEXTURE = level_init()

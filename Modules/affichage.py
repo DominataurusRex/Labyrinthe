@@ -1,7 +1,7 @@
 import pygame
 from math import sqrt
 from Modules.fonction import GameStrings, Button, Button_grid, Text
-from Modules.fonction import save_game, load_game, create_new_grid, get_dimension_grid, blit_grid, blit_appearance, create_button_tinker
+from Modules.fonction import save_game, load_game, create_new_grid, get_dimension_grid, blit_grid, blit_appearance, create_button_tinker, play_game
 from Modules.constant import COLOR_TURN, LANG
 
 
@@ -86,7 +86,7 @@ def create_play_menu(window, color):
     frame = pygame.Surface(window.get_size())
 
     dimension_grid = get_dimension_grid(frame)
-    grid = load_game('test')
+    grid = play_game('test')
     frame.blit(blit_grid(window, grid, dimension_grid),(0, 0))
     blit_appearance(frame, color)
 
@@ -132,21 +132,26 @@ def create_build_menu(window, color, grid_size):
                            game_strings.get_string('Return'), color[1])
     return_button.draw(frame)
 
-    less_button = Button(window, (0.3, 0.4, 0.1, 0.1), '-', color[1])
+    less_button = Button(window, (0.3, 0.4, 0.1, 0.08), '-', color[1])
     less_button.draw(frame)
 
-    grid_size_text = Text(window, (0.45, 0.4, 0.1, 0.1), grid_size)
+    grid_size_text = Text(window, (0.45, 0.4, 0.1, 0.08), grid_size)
     grid_size_text.draw(frame)
 
-    more_button = Button(window, (0.6, 0.4, 0.1, 0.1), '+', color[1])
+    more_button = Button(window, (0.6, 0.4, 0.1, 0.08), '+', color[1])
     more_button.draw(frame)
 
-    enter_button = Button(window, (0.4, 0.6, 0.2, 0.1), 'Aller', color[1])
-    enter_button.draw(frame)
+    create_button = Button(window, (0.4, 0.6, 0.2, 0.08), 
+                           game_strings.get_string('Create'), color[1])
+    create_button.draw(frame)
+
+    load_button = Button(window, (0.4, 0.7, 0.2, 0.08),
+                         game_strings.get_string('Load'), color[1])
+    load_button.draw(frame)
 
     window.blit(frame, (0, 0))
     pygame.display.flip()
-    return return_button, less_button, more_button, enter_button
+    return return_button, less_button, more_button, create_button, load_button
 
 def build_menu(window, color):
     """
@@ -178,9 +183,15 @@ def build_menu(window, color):
                 if grid_size != 30:
                     grid_size += 1
                     list_button_build = create_build_menu(window, color, grid_size)
-            # Bouton Entrer
+            # Bouton Creer
             if list_button_build[3].is_pressed(event):
-                tinker_menu(window, color, grid_size)
+                grid = create_new_grid(grid_size)
+                tinker_menu(window, color, grid)
+                create_build_menu(window, color, grid_size)
+            # Bouton Load
+            if list_button_build[4].is_pressed(event):
+                grid = load_game('test')
+                tinker_menu(window, color, grid)
                 create_build_menu(window, color, grid_size)
 
 
@@ -222,11 +233,10 @@ def create_tinker_menu(window, color, grid):
     return return_button, save_button, grid_button, button_block
 
 
-def tinker_menu(window, color, grid_size):
+def tinker_menu(window, color, grid):
     """
     Affichage du 'tinker_menu'
     """
-    grid = create_new_grid(grid_size)
     list_button_tinker = create_tinker_menu(window, color, grid)
     proceed = True
     rajout_case = 0
