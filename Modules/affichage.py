@@ -1,7 +1,7 @@
 import pygame
 from math import sqrt
 from Modules.fonction import GameStrings, Button, Button_grid, Text
-from Modules.fonction import save_game, load_game, create_new_grid, get_dimension_grid, blit_grid, blit_appearance, create_button_tinker, play_game
+from Modules.fonction import save_game, load_game, create_new_grid, get_dimension_grid, blit_grid, blit_appearance, create_button_tinker, play_game, get_gravity
 from Modules.constant import COLOR_TURN, LANG
 
 
@@ -77,16 +77,14 @@ def main_menu(window, color):
                 return
 
 
-def create_play_menu(window, color):
+def create_play_menu(window, color, grid):
     """
     Mise en place de la logique du 'play_menu' avec:
     - 'window' la fenêtre
     - 'color' la couleur
     """
     frame = pygame.Surface(window.get_size())
-
     dimension_grid = get_dimension_grid(frame)
-    grid = play_game('test')
     frame.blit(blit_grid(window, grid, dimension_grid),(0, 0))
     blit_appearance(frame, color)
 
@@ -94,17 +92,23 @@ def create_play_menu(window, color):
                            game_strings.get_string('Return'), color[1])
     return_button.draw(frame)
 
+    reset_button = Button(window, (0.85, 0.05, 0.1, 0.08),
+                          game_strings.get_string('Reset'), color[1])
+    reset_button.draw(frame)
+
     window.blit(frame, (0, 0))
     pygame.display.flip()
-    return return_button, None
+    return return_button, reset_button
 
 def play_menu(window, color):
     """
     Affichage du 'play_menu'
     """
-    list_play_menu = create_play_menu(window, color)
+    grid = load_game('test')
+    gravity = 'DOWN'
     proceed = True
     while proceed:
+        list_play_menu = create_play_menu(window, color, grid)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -113,10 +117,15 @@ def play_menu(window, color):
                 window_w, window_h = window.get_size()
                 if window_w < 500 or window_h < 250:
                     window = pygame.display.set_mode((500, 250), pygame.RESIZABLE)
-                list_play_menu = create_play_menu(window, color)
             # Bouton Quitter
             if list_play_menu[0].is_pressed(event):
                 proceed = False
+            # Bouton Reset
+            if list_play_menu[1].is_pressed(event):
+                grid = load_game('test')
+                gravity = 'DOWN'
+            gravity = get_gravity(event, gravity)
+        grid = play_game(grid, gravity)
 
 
 def create_build_menu(window, color, grid_size):

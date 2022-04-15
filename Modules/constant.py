@@ -48,10 +48,10 @@ def level_init():
             texture[place] = image_temp
             place += 1
     image_charac = pygame.image.load("Image/character.png")
-    texture['down'] = image_charac.subsurface((0, 0, 32, 32))
-    texture['left'] = image_charac.subsurface((32, 0, 32, 32))
-    texture['right'] = image_charac.subsurface((0, 32, 32, 32))
-    texture['up'] = image_charac.subsurface((32, 32, 32, 32))
+    texture['DOWN'] = image_charac.subsurface((0, 0, 32, 32))
+    texture['LEFT'] = image_charac.subsurface((32, 0, 32, 32))
+    texture['RIGHT'] = image_charac.subsurface((0, 32, 32, 32))
+    texture['UP'] = image_charac.subsurface((32, 32, 32, 32))
     return texture
     
 TEXTURE = level_init()

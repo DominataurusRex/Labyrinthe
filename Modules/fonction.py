@@ -1,6 +1,7 @@
 import pygame
 import json
 from math import sqrt
+from time import sleep
 from Modules.constant import COLOR, FONT_HEIGHT, TEXTURE
 
 
@@ -120,16 +121,63 @@ def create_button_tinker(surface):
             if lenght >= longueur:
                 return button_return
 
-def play_game(name):
+def play_game(grid, gravity):
     """
     O
     """
-    grid = load_game(name)
+    dimension_grid = int(sqrt(len(grid)))
     for key in grid:
+        # Remplace le départ par le personnage
         if grid[key] == 1:
-            grid[key] = 'down'
+            grid[key] = gravity
+            return grid
+        # Permet de changer le sens du personnage
+        if grid[key] in ('DOWN', 'RIGHT', 'UP', 'LEFT') and grid[key] != gravity:
+            grid[key] = gravity
+            return grid
+        # Mouvement du personnage
+        proceed = True
+        while proceed:
+            if grid[key] in ('DOWN', 'RIGHT', 'UP', 'LEFT'):
+                if grid[key] == 'DOWN':
+                    if grid[str(int(key) + dimension_grid)] == 0:
+                        grid[key] = 0
+                        grid[str(int(key) + dimension_grid)] = 'DOWN'
+                        sleep(0.3)
+                    else:
+                        proceed = False
+                    proceed = False
+                if grid[key] == 'RIGHT':
+                    proceed = False
+                if grid[key] == 'UP':
+                    if grid[str(int(key) - dimension_grid)] == 0:
+                        grid[key] = 0
+                        grid[str(int(key) - dimension_grid)] = 'UP'
+                        sleep(0.3)
+                    else:
+                        proceed = False
+                if grid[key] == 'LEFT':
+                    proceed = False
+            else:
+                proceed = False
+
     return grid
 
+def get_gravity(event, gravity):
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_UP:
+            print('UP')
+            return 'UP'
+        if event.key == pygame.K_RIGHT:
+            print('RIGHT')
+            return 'RIGHT'
+        if event.key == pygame.K_DOWN:
+            print('DOWN')
+            return 'DOWN'
+        if event.key == pygame.K_LEFT:
+            print('LEFT')
+            return 'LEFT'
+    return gravity
 
 
 class GameStrings:
