@@ -11,4 +11,7 @@
  "GREEN": "Vert",
  "YELLOW": "Jaune",
  "RED": "Rouge",
- "Color": "Couleur - "}
+ "Color": "Couleur - ",
+ "Exit_code_0": "- Il n'y a pas assez d'entrée -",
+ "Exit_code_1": "- Niveau Sauvegardé -",
+ "Exit_code_2": "- Il y a trop d'entrée -"}

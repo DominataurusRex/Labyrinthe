@@ -121,63 +121,87 @@ def create_button_tinker(surface):
             if lenght >= longueur:
                 return button_return
 
-def play_game(grid, gravity):
+def play_game(grid, gravity, pos_player):
     """
-    O
+    Permet de déplacer le joueur par rapport à la gravité
+    et bloque la capacité de modifier la gravité si il est
+    en mouvement
     """
+    coin = 0
+    mouv = False
     dimension_grid = int(sqrt(len(grid)))
-    for key in grid:
-        # Remplace le départ par le personnage
-        if grid[key] == 1:
-            grid[key] = gravity
-            return grid
-        # Permet de changer le sens du personnage
-        if grid[key] in ('DOWN', 'RIGHT', 'UP', 'LEFT') and grid[key] != gravity:
-            grid[key] = gravity
-            return grid
-        # Mouvement du personnage
-        proceed = True
-        while proceed:
-            if grid[key] in ('DOWN', 'RIGHT', 'UP', 'LEFT'):
-                if grid[key] == 'DOWN':
-                    if grid[str(int(key) + dimension_grid)] == 0:
-                        grid[key] = 0
-                        grid[str(int(key) + dimension_grid)] = 'DOWN'
-                        sleep(0.3)
-                    else:
-                        proceed = False
-                    proceed = False
-                if grid[key] == 'RIGHT':
-                    proceed = False
-                if grid[key] == 'UP':
-                    if grid[str(int(key) - dimension_grid)] == 0:
-                        grid[key] = 0
-                        grid[str(int(key) - dimension_grid)] = 'UP'
-                        sleep(0.3)
-                    else:
-                        proceed = False
-                if grid[key] == 'LEFT':
-                    proceed = False
-            else:
-                proceed = False
+    if gravity == "DOWN":
+        if not pos_player + dimension_grid > len(grid) - 1:
+            new_pos = pos_player + dimension_grid
+            mouv = True
+    elif gravity == "RIGHT":
+        if not (pos_player + 1) % dimension_grid == 0:
+            new_pos = pos_player + 1
+            mouv = True
+    elif gravity == "UP":
+        if not pos_player - dimension_grid < 0: 
+            new_pos = pos_player - dimension_grid
+            mouv = True
+    elif gravity == "LEFT":
+        if not (pos_player - 1) % dimension_grid == dimension_grid - 1:
+            new_pos = pos_player - 1
+            mouv = True
+    if mouv:
+        sleep(0.01)
+        if grid[str(new_pos)] != 3:
+            if grid[str(new_pos)] == 4:
+                coin = 1
+            grid[str(pos_player)] = 0
+            grid[str(new_pos)] = gravity
+            pos_player = new_pos
+            lock = True
+        else:
+            lock = False
+    else:
+        lock = False
+    return grid, pos_player, (lock, coin)
 
-    return grid
+def set_pos_player(grid, gravity):
+    """
+    Remplace la zone d'apparition par le joueur et
+    renvoie son emplacement lors de l'initialisation
+    """
+    for value in grid:
+        if grid[value] == 1:
+            place = int(value)
+            grid[value] = gravity
+    return grid, place
 
-def get_gravity(event, gravity):
+def set_gravity(event, gravity):
+    """
+    Renvoie la gravité par rapport à la flèche choisit
+    """
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_UP:
-            print('UP')
             return 'UP'
-        if event.key == pygame.K_RIGHT:
-            print('RIGHT')
+        elif event.key == pygame.K_RIGHT:
             return 'RIGHT'
-        if event.key == pygame.K_DOWN:
-            print('DOWN')
+        elif event.key == pygame.K_DOWN:
             return 'DOWN'
-        if event.key == pygame.K_LEFT:
-            print('LEFT')
+        elif event.key == pygame.K_LEFT:
             return 'LEFT'
     return gravity
+
+def verif_level_save(grid):
+    """
+    Permet de voir si il n'y a pas d'erreur
+    dans le niveau pour le sauvegarder
+    """
+    count_enter = 0
+    for case in grid:
+        if grid[case] == 1:
+            count_enter += 1
+    if count_enter < 1:
+        return 0
+    elif count_enter == 1:
+        return 1
+    elif count_enter > 1:
+        return 2
 
 
 class GameStrings:
