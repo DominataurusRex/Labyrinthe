@@ -12,6 +12,9 @@
  "YELLOW": "Yellow",
  "RED": "Red",
  "Color": "Color - ",
- "Exit_code_0": "- There is not enough entry -",
- "Exit_code_1": "- Saved Level -",
- "Exit_code_2": "- There is too much entry -"}
+ "Exit_code_-1": "- File not found -",
+ "Exit_code_0": "- Saved level -",
+ "Exit_code_1": "- There is not enough entry -",
+ "Exit_code_2": "- There is too much entry -",
+ "Exit_code_3": "- File name required -",
+ "Exit_code_4": "- File name too short -"}

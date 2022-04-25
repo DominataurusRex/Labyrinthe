@@ -1,10 +1,10 @@
 from time import sleep
 import pygame
 
-from Modules.fonction import GameStrings, Button, Button_grid, Text
+from Modules.fonction import GameStrings, Button, Button_grid, Text, InputBox
 from Modules.fonction import save_game, load_game, create_new_grid, get_dimension_grid, blit_grid
-from Modules.fonction import blit_appearance, create_button_tinker, play_game, set_gravity, set_pos_player
-from Modules.fonction import verif_level_save
+from Modules.fonction import blit_appearance, create_button_build, play_game, set_gravity, set_pos_player
+from Modules.fonction import verif_level_save, verif_level_load, get_list_game
 from Modules.constant import COLOR, COLOR_TURN, LANG
 
 
@@ -52,8 +52,8 @@ def main_menu(window, color):
     while proceed:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                proceed = False
                 pygame.quit()
-                return
             elif event.type == pygame.VIDEORESIZE:
                 window_w, window_h = window.get_size()
                 if window_w < 500 or window_h < 250:
@@ -66,7 +66,7 @@ def main_menu(window, color):
             # Bouton Build
             elif list_button_menu[1].is_pressed(event):
                 proceed = False
-                build_menu(window, color)
+                tinker_menu(window, color)
             # Bouton Option
             elif list_button_menu[2].is_pressed(event):
                 color = (color[0] + 1, COLOR_TURN[color[0] % 4])
@@ -74,10 +74,12 @@ def main_menu(window, color):
             # Bouton Autre
             elif list_button_menu[3].is_pressed(event):
                 print("A")
+                verif_level_load("test3")
             # Bouton Quitter
             elif list_button_menu[4].is_pressed(event):
+                proceed = False
                 pygame.quit()
-                return
+            
 
 
 def create_play_menu(window, color, grid, nbr_coins):
@@ -145,9 +147,9 @@ def play_menu(window, color):
         
 
 
-def create_build_menu(window, color, grid_size):
+def create_tinker_menu(window, color, grid_size):
     """
-    Mise en place de la logique du 'build_menu' avec:
+    Mise en place de la logique du 'tinker_menu' avec:
     - 'window' la fenêtre
     - 'color' la couleur
     - 'grid_size' le nombre de case qui doit être affiché
@@ -158,33 +160,41 @@ def create_build_menu(window, color, grid_size):
                            game_strings.get_string('Return'), color[1])
     return_button.draw(frame)
 
-    less_button = Button(window, (0.3, 0.4, 0.1, 0.08), '-', color[1])
+    less_button = Button(window, (0.3, 0.25, 0.1, 0.08), '-', color[1])
     less_button.draw(frame)
 
-    grid_size_text = Text(window, (0.45, 0.4, 0.1, 0.08), grid_size)
+    grid_size_text = Text(window, (0.45, 0.25, 0.1, 0.08), grid_size)
     grid_size_text.draw(frame)
 
-    more_button = Button(window, (0.6, 0.4, 0.1, 0.08), '+', color[1])
+    more_button = Button(window, (0.6, 0.25, 0.1, 0.08), '+', color[1])
     more_button.draw(frame)
 
-    create_button = Button(window, (0.4, 0.6, 0.2, 0.08), 
+    create_button = Button(window, (0.3, 0.35, 0.4, 0.08), 
                            game_strings.get_string('Create'), color[1])
     create_button.draw(frame)
 
-    load_button = Button(window, (0.4, 0.7, 0.2, 0.08),
+    list_game_button = Button(window, (0.3, 0.55, 0.08, 0.18),
+                              "i", color[1])
+    list_game_button.draw(frame)
+
+    load_name_input = InputBox(window, (0.4, 0.55, 0.3, 0.08), color[1])
+
+    load_button = Button(window, (0.4, 0.65, 0.3, 0.08),
                          game_strings.get_string('Load'), color[1])
     load_button.draw(frame)
 
     window.blit(frame, (0, 0))
     pygame.display.flip()
-    return return_button, less_button, more_button, create_button, load_button
+    return (return_button, less_button, more_button, create_button,
+            list_game_button, load_name_input, load_button)
 
-def build_menu(window, color):
+def tinker_menu(window, color):
     """
-    Affichage du 'build_menu'
+    Affichage du 'tinker_menu'
     """
+    name_load = ''
     grid_size = 10
-    list_button_build = create_build_menu(window, color, grid_size)
+    list_button_tinker = create_tinker_menu(window, color, grid_size)
     proceed = True
     while proceed:
         for event in pygame.event.get():
@@ -195,36 +205,54 @@ def build_menu(window, color):
                 window_w, window_h = window.get_size()
                 if window_w < 500 or window_h < 250:
                     window = pygame.display.set_mode((500, 250), pygame.RESIZABLE)
-                list_button_build = create_build_menu(window, color, grid_size)
+                list_button_tinker = create_tinker_menu(window, color, grid_size)
             # Bouton Retour
-            elif list_button_build[0].is_pressed(event):
+            elif list_button_tinker[0].is_pressed(event):
                 proceed = False
                 main_menu(window, color)
             # Bouton Moins
-            elif list_button_build[1].is_pressed(event):
+            elif list_button_tinker[1].is_pressed(event):
                 if grid_size != 5:
                     grid_size -= 1
-                    list_button_build = create_build_menu(window, color, grid_size)
+                    list_button_tinker = create_tinker_menu(window, color, grid_size)
             # Bouton Plus
-            elif list_button_build[2].is_pressed(event):
+            elif list_button_tinker[2].is_pressed(event):
                 if grid_size != 20:
                     grid_size += 1
-                    list_button_build = create_build_menu(window, color, grid_size)
+                    list_button_tinker = create_tinker_menu(window, color, grid_size)
             # Bouton Creer
-            elif list_button_build[3].is_pressed(event):
+            elif list_button_tinker[3].is_pressed(event):
                 proceed = False
                 grid = create_new_grid(grid_size)
-                tinker_menu(window, color, grid)
+                build_menu(window, color, grid)
+            # Bouton Information
+            elif list_button_tinker[4].is_pressed(event):
+                list_game_menu(window, color)
+                list_button_tinker = create_tinker_menu(window, color, grid_size)
+            # Zone de saisie entré
+            elif list_button_tinker[5].return_pressed(event):
+                name_load = list_button_tinker[5].text
             # Bouton Load
-            elif list_button_build[4].is_pressed(event):
-                proceed = False
-                grid = load_game('test')
-                tinker_menu(window, color, grid)
+            elif list_button_tinker[6].is_pressed(event):
+                exit_code = verif_level_load(name_load)
+                if exit_code == 0:
+                    proceed = False
+                    grid = load_game(name_load)
+                    build_menu(window, color, grid)
+                else:
+                    window_exit_menu(window, color, exit_code)
+                    sleep(2)
+                    list_button_tinker = create_tinker_menu(window, color, grid_size)
+            if proceed:
+                # Zone de saisie
+                list_button_tinker[5].interact(event)
+                list_button_tinker[5].draw(window)
+                pygame.display.flip()
 
 
-def create_tinker_menu(window, color, grid):
+def create_build_menu(window, color, grid, name_save):
     """
-    Mise en place de la logique du 'tinker_menu' avec:
+    Mise en place de la logique du 'build_menu' avec:
     - 'window' la fenêtre
     - 'color' la couleur
     - 'grid' la grille de jeu
@@ -244,7 +272,7 @@ def create_tinker_menu(window, color, grid):
     blit_appearance(frame, color)
 
     # Bouton des blocs
-    button_block = create_button_tinker(frame)
+    button_block = create_button_build(frame)
     # Bouton retour
     return_button = Button(window, (0.05, 0.05, 0.1, 0.08),
                            game_strings.get_string('Return'), color[1])
@@ -254,18 +282,21 @@ def create_tinker_menu(window, color, grid):
                          game_strings.get_string('Save'), color[1])
     save_button.draw(frame)
 
+    save_name_input = InputBox(window, (0.85, 0.15, 0.1, 0.08), color[1], name_save)
+
     window.blit(frame, (0, 0))
 
     pygame.display.flip()
-    return return_button, save_button, grid_button, button_block
+    return return_button, save_button, grid_button, button_block, save_name_input
 
-def tinker_menu(window, color, grid):
+def build_menu(window, color, grid):
     """
-    Affichage du 'tinker_menu'
+    Affichage du 'build_menu'
     """
-    list_button_tinker = create_tinker_menu(window, color, grid)
-    proceed = True
+    name_save = ''
+    list_button_build = create_build_menu(window, color, grid, name_save)
     rajout_case = 0
+    proceed = True
     while proceed:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -275,39 +306,48 @@ def tinker_menu(window, color, grid):
                 window_w, window_h = window.get_size()
                 if window_w < 500 or window_h < 250:
                     window = pygame.display.set_mode((500, 250), pygame.RESIZABLE)
-                list_button_tinker = create_tinker_menu(window, color, grid)
+                list_button_build = create_build_menu(window, color, grid, name_save)
             # Bouton Retour
-            elif list_button_tinker[0].is_pressed(event):
+            elif list_button_build[0].is_pressed(event):
                 proceed = False
-                build_menu(window, color)
+                tinker_menu(window, color)
             # Bouton Sauvegarde
-            elif list_button_tinker[1].is_pressed(event):
-                exit_code = verif_level_save(grid)
-                if exit_code == 1:
-                    save_game("test", grid)
-                save_menu(window, color, exit_code)
+            elif list_button_build[1].is_pressed(event):
+                exit_code = verif_level_save(grid, name_save)
+                if exit_code == 0:
+                    save_game(name_save, grid)
+                window_exit_menu(window, color, exit_code)
                 sleep(2)
-                list_button_tinker = create_tinker_menu(window, color, grid)
+                list_button_build = create_build_menu(window, color, grid, name_save)
             # Grille
-            elif list_button_tinker[2].is_pressed(event):
-                coord = list_button_tinker[2].get_coord()
+            elif list_button_build[2].is_pressed(event):
+                coord = list_button_build[2].get_coord()
                 if grid[str(coord)] == 0:
                     grid[str(coord)] = rajout_case
                 else:
                     grid[str(coord)] = 0
-                list_button_tinker = create_tinker_menu(window, color, grid)
-            # Button créateur
+                list_button_build = create_build_menu(window, color, grid, name_save)
+            # Zone de saisie entré
+            elif list_button_build[4].return_pressed(event):
+                name_save = list_button_build[4].text
             if proceed:
-                list_touch = list_button_tinker[3]
+                # Button créateur
+                list_touch = list_button_build[3]
                 place = 1
                 for button in list_touch:
                     if button.is_pressed(event):
                         rajout_case = place
                     place += 1
+                # Zone de saisie
+                list_button_build[4].interact(event)
+                list_button_build[4].draw(window)
+                pygame.display.flip()
+                
 
-def save_menu(window, color, exit_code):
+def window_exit_menu(window, color, exit_code):
     """
-    Mise en place de la logique du 'save_menu' avec:
+    Mise en place de la logique et 
+    affichage de 'window_exit_menu' avec:
     - 'window' la fenêtre
     - 'color' la couleur
     - 'exit_code' le code de sortie de la sauvegarde
@@ -326,3 +366,47 @@ def save_menu(window, color, exit_code):
 
     window.blit(frame, (int(window_w * 0.3), int(window_h * 0.4)))
     pygame.display.flip()
+
+
+def create_list_game_menu(window, color):
+    """
+    Mise en place de la logique de 'list_game_menu' avec:
+    - 'window' la fenêtre
+    - 'color' la couleur
+    """
+    window_w, window_h = window.get_size()
+    frame = pygame.Surface((int(window_w * 0.8), int(window_h * 0.8)))
+    frame_w, frame_h = frame.get_size()
+    rect = pygame.Rect(0, 0, frame_w, frame_h)
+    pygame.draw.rect(frame, COLOR["BLACK"], rect)
+    pygame.draw.rect(frame, COLOR[color[1]], rect, 3)
+
+    list_game = get_list_game()
+    nbr_game = 0
+    for game in list_game:
+        x_value = 0.01 + 0.1 * (nbr_game // 8)
+        y_value = 0.01 + 0.1 * (nbr_game % 8)
+        game = game.replace(".json","")
+        text_game = Button(window, (x_value, y_value, 0.08, 0.08), game, color[1])
+        text_game.draw(frame)
+        nbr_game += 1
+
+    window.blit(frame, (int(window_w * 0.1), int(window_h * 0.1)))
+    pygame.display.flip()
+
+def list_game_menu(window, color):
+    """
+    Affichage du 'list_game_menu'
+    """
+    create_list_game_menu(window, color)
+    proceed = True
+    while proceed:
+        for event in pygame.event.get():
+            if event.type == pygame.VIDEORESIZE:
+                window_w, window_h = window.get_size()
+                if window_w < 500 or window_h < 250:
+                    window = pygame.display.set_mode((500, 250), pygame.RESIZABLE)
+                create_list_game_menu(window, color)
+            # Bouton Retour
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                proceed = False

@@ -12,6 +12,9 @@
  "YELLOW": "Jaune",
  "RED": "Rouge",
  "Color": "Couleur - ",
- "Exit_code_0": "- Il n'y a pas assez d'entrée -",
- "Exit_code_1": "- Niveau Sauvegardé -",
- "Exit_code_2": "- Il y a trop d'entrée -"}
+ "Exit_code_-1": "- Fichier introuvable -",
+ "Exit_code_0": "- Niveau sauvegardé -",
+ "Exit_code_1": "- Il n'y a pas assez d'entrée -",
+ "Exit_code_2": "- Il y a trop d'entrée -",
+ "Exit_code_3": "- Nom de fichier requis -",
+ "Exit_code_4": "- Nom de fichier trop court -"}

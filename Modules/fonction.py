@@ -1,5 +1,6 @@
 import pygame
 import json
+import os
 from math import sqrt
 from time import sleep
 from Modules.constant import COLOR, FONT_HEIGHT, TEXTURE
@@ -45,6 +46,10 @@ def load_game(name):
         dict_grid = json.load(file)
     file.close()
     return dict_grid
+
+def get_list_game():
+    list_game = os.listdir('Others/Game_save/')
+    return list_game
 
 def create_new_grid(dimension):
     """
@@ -102,7 +107,7 @@ def blit_appearance(surface, color):
     line_3 = Line(surface, (0.8, 0, 0.8, 0.7), color[1])
     line_3.draw(surface)
 
-def create_button_tinker(surface):
+def create_button_build(surface):
     """
     Permet d'afficher le boutons permettant de choisir
     ce que l'on souhaite placer dans la grille
@@ -187,22 +192,35 @@ def set_gravity(event, gravity):
             return 'LEFT'
     return gravity
 
-def verif_level_save(grid):
+def verif_level_save(grid, name_save):
     """
-    Permet de voir si il n'y a pas d'erreur
-    dans le niveau pour le sauvegarder
+    Permet de voir si il n'y a pas
+    d'erreur pour le sauvegarder
     """
     count_enter = 0
     for case in grid:
         if grid[case] == 1:
             count_enter += 1
+    # Pas d'entrée
     if count_enter < 1:
-        return 0
-    elif count_enter == 1:
         return 1
+    # Trop d'entrée
     elif count_enter > 1:
         return 2
+    # Nom non complété
+    elif len(name_save) == 0:
+        return 3
+    # Nom trop court
+    elif len(name_save) < 3:
+        return 4
+    # Tout est bon
+    else:
+        return 0
 
+def verif_level_load(name_load):
+    if name_load + ".json" in get_list_game():
+        return 0
+    return -1
 
 class GameStrings:
     """
@@ -456,6 +474,84 @@ class Text:
         surface.blit(self.text_image, self.text_pos)
 
 
+class InputBox:
+    """
+    Crée une zone d'insertion de texte
+    """
+    def __init__(self, window, relative_position, color, text='', max_len=10):
+        """
+        Initialise la zone d'insertion avec comme argument:
+        - 'window' qui correspond à la fenêtre sur laquel il va se générer
+        - 'relative_position' un 4-uple (x, y, w, h)
+            - 'x' la position x par rapport à la largeur de la fenêtre
+                0 -> à gauche / 1 -> à droite (sortit de fenêtre)
+            - 'y' la position y par rapport à la hauteur de la fenêtre
+                0 -> en haut / 1 -> en bas (sortit de fenêtre)
+            - 'w' correspond à la largeur de la zone par rapport à la
+                largeur de la fenêtre
+                0 -> texte inexistant / 1 -> largeur de la fenêtre
+            - 'h' correspond à la hauteur de la zone par rapport à la
+                hauteur de la fenêtre
+                0 -> texte inexistant / 1 -> hauteur de la fenêtre
+        - 'text'"""
+        self.relative_position = relative_position
+        self.max_len = max_len
+        self.text = text
+        self.color = COLOR[color]
+        self.active = False
+        self.window = window
+        self.resize(window)
+        
+
+    def resize(self, window):
+        """
+        Permet de redimensionner le bouton par rapport à la dimension
+        de la fenêtre 'window'
+        """
+        window_w, window_h = window.get_size()
+        self.x_value = round(self.relative_position[0] * window_w)
+        self.y_value = round(self.relative_position[1] * window_h)
+        self.w_value = round(self.relative_position[2] * window_w)
+        self.h_value = round(self.relative_position[3] * window_h)
+        self.rect = pygame.Rect(self.x_value, self.y_value,
+                                self.w_value, self.h_value)
+        font_size = get_font_size(round(self.rect.h * 0.6))
+        self.font = pygame.font.SysFont("Impact", font_size)
+        self.text_surface = self.font.render(self.text, 1, COLOR['WHITE'])
+        self.text_pos = self.text_surface.get_rect(center=self.rect.center)
+    
+    def interact(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                self.active = not self.active
+            else:
+                self.active = False
+        if event.type == pygame.KEYDOWN:
+            if self.active:
+                if event.key == pygame.K_BACKSPACE:
+                    self.text = self.text[:-1]
+                elif len(self.text) <= self.max_len - 1 and not event.key == pygame.K_RETURN:
+                    self.text += event.unicode
+                self.resize(self.window)
+            self.text_surface = self.font.render(self.text, True, COLOR['WHITE'])
+        
+    def return_pressed(self, event):
+        if event.type == pygame.KEYDOWN:
+            if self.active:
+                if event.key == pygame.K_RETURN:
+                    return True
+        return False
+    
+    def get_text(self):
+        text = self.text
+        return text
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, COLOR['BLACK'], self.rect)
+        screen.blit(self.text_surface, self.text_pos)
+        pygame.draw.rect(screen, self.color, self.rect, 2)
+
+
 class Fence:
     """
     Génère un quadrillage centré horizontalement et en haut de la fenêtre
@@ -498,21 +594,12 @@ class Fence:
             self.line_finish1 = x_value, 0 + self.dimension_grid
             self.line_start2 = self.start_grid , y_value
             self.line_finish2 = self.start_grid + self.dimension_grid, y_value
-            pygame.draw.line(frame, COLOR['BLACK'], self.line_start1
-                                                      , self.line_finish1, 1)
-            pygame.draw.line(frame, COLOR['BLACK'], self.line_start2
-                                                      , self.line_finish2, 1)
+            
             x_value += self.dimension_box
             y_value += self.dimension_box
         pygame.draw.rect(frame, COLOR['DARK_GRAY'],
                          (self.start_grid, 0,
                          self.dimension_grid, self.dimension_grid), 1)
-
-    def get_dimension_grid(self):
-        """
-        Permet de récupérer la dimension du quadrillage
-        """
-        return self.dimension_grid
 
 
 class Line:
