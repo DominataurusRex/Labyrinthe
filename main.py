@@ -1,3 +1,6 @@
+"""
+C'est le fichier principale qui permet de lancer le jeu
+"""
 import pygame
 from Modules.affichage import main_menu
 

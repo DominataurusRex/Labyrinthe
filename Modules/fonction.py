@@ -1,8 +1,11 @@
-import pygame
+"""
+Ce module s'occupe des différentes fonction nécessaire au bon fonctionnement du jeu
+"""
 import json
 import os
 from math import sqrt
 from time import sleep
+import pygame
 from Modules.constant import COLOR, FONT_HEIGHT, TEXTURE
 
 
@@ -48,6 +51,10 @@ def load_game(name):
     return dict_grid
 
 def get_list_game():
+    """
+    Permet d'obtenir la liste des sauvegardes
+    dans l'emplacement 'Others/Game_save/'
+    """
     list_game = os.listdir('Others/Game_save/')
     return list_game
 
@@ -67,10 +74,11 @@ def get_dimension_grid(window):
     pour afficher la grille de jeu
     """
     window_w, window_h = window.get_size()
-    if window_w * 0.6 < window_h * 0.7:
-        return (window_w * 0.6)
-    else:
-        return (window_h * 0.7)
+    x_value = window_w * 0.6
+    y_value = window_h * 0.7
+    if x_value < y_value:
+        return x_value
+    return y_value
 
 def blit_grid(window, grid, dimension_grid):
     """
@@ -83,7 +91,7 @@ def blit_grid(window, grid, dimension_grid):
     frame = pygame.Surface(window.get_size())
     grid_size = int(sqrt(len(grid)))
     scale = int(dimension_grid // grid_size)
-    window_w, window_h = window.get_size()
+    window_w = (window.get_size())[0]
     for box in grid:
         coordonne_box = int(box) // grid_size, int(box) % grid_size
         x_coord = (window_w - dimension_grid) / 2
@@ -92,8 +100,6 @@ def blit_grid(window, grid, dimension_grid):
         if grid[box] != 0:
             image = pygame.transform.scale(TEXTURE[grid[box]], (scale, scale))
             frame.blit(image, (x_value + 1, y_value + 1))
-    fence = Fence(window, int(sqrt(len(grid))), dimension_grid)
-    fence.draw(frame)
     return frame
 
 def blit_appearance(surface, color):
@@ -119,12 +125,13 @@ def create_button_build(surface):
         y_value = 0.735 + ((0.045 + 0.04) * i)
         for j in range(20):
             x_value = 0.025 + ((0.025 + 0.04) * j)
-            button = Button_image(surface, (x_value, y_value, 0.04), TEXTURE[lenght])
+            button = Buttonimage(surface, (x_value, y_value, 0.04), TEXTURE[lenght])
             button.draw(surface)
             button_return.append(button)
             lenght = lenght + 1
             if lenght >= longueur:
                 return button_return
+    return None
 
 def play_game(grid, gravity, pos_player):
     """
@@ -133,25 +140,25 @@ def play_game(grid, gravity, pos_player):
     en mouvement
     """
     coin = 0
-    mouv = False
+    limit = True
     dimension_grid = int(sqrt(len(grid)))
     if gravity == "DOWN":
         if not pos_player + dimension_grid > len(grid) - 1:
             new_pos = pos_player + dimension_grid
-            mouv = True
+            limit = False
     elif gravity == "RIGHT":
         if not (pos_player + 1) % dimension_grid == 0:
             new_pos = pos_player + 1
-            mouv = True
+            limit = False
     elif gravity == "UP":
-        if not pos_player - dimension_grid < 0: 
+        if not pos_player - dimension_grid < 0:
             new_pos = pos_player - dimension_grid
-            mouv = True
+            limit = False
     elif gravity == "LEFT":
         if not (pos_player - 1) % dimension_grid == dimension_grid - 1:
             new_pos = pos_player - 1
-            mouv = True
-    if mouv:
+            limit = False
+    if not limit:
         sleep(0.01)
         if grid[str(new_pos)] != 3:
             if grid[str(new_pos)] == 4:
@@ -218,6 +225,9 @@ def verif_level_save(grid, name_save):
         return 0
 
 def verif_level_load(name_load):
+    """
+    Permet de vérifier si 'name_load' répond aux attentes
+    """
     if name_load + ".json" in get_list_game():
         return 0
     return -1
@@ -272,8 +282,7 @@ class Button:
         """
         self.relative_position = relative_position
         self.text = text
-        self.color_ext = COLOR[color]
-        self.color_int = COLOR['DARK_' + color]
+        self.color = color
         self.resize(window)
 
     def resize(self, window):
@@ -282,12 +291,11 @@ class Button:
         de la fenêtre 'window'
         """
         window_w, window_h = window.get_size()
-        self.x_value = round(self.relative_position[0] * window_w)
-        self.y_value = round(self.relative_position[1] * window_h)
-        self.w_value = round(self.relative_position[2] * window_w)
-        self.h_value = round(self.relative_position[3] * window_h)
-        self.rect = pygame.Rect(self.x_value, self.y_value,
-                                self.w_value, self.h_value)
+        x_value = round(self.relative_position[0] * window_w)
+        y_value = round(self.relative_position[1] * window_h)
+        w_value = round(self.relative_position[2] * window_w)
+        h_value = round(self.relative_position[3] * window_h)
+        self.rect = pygame.Rect(x_value, y_value, w_value, h_value)
         font_size = get_font_size(round(self.rect.h * 0.6))
         font = pygame.font.SysFont("Impact", font_size)
         self.text_image = font.render(self.text, 1, COLOR['WHITE'])
@@ -297,25 +305,22 @@ class Button:
         """
         Permet d'afficher le bouton sur la surface 'surface'
         """
-        pygame.draw.rect(surface, self.color_int, self.rect)
-        pygame.draw.rect(surface, self.color_ext, self.rect, 3)
+        pygame.draw.rect(surface, COLOR["DARK_" + self.color], self.rect)
+        pygame.draw.rect(surface, COLOR[self.color], self.rect, 3)
         surface.blit(self.text_image, self.text_pos)
 
     def is_pressed(self, event):
         """
         Détecte si le bouton est pressé
         """
-        dimension_x = self.x_value + self.w_value
-        dimension_y = self.y_value + self.h_value
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                mouse = pygame.mouse.get_pos()
-                if self.x_value <= mouse[0] <= dimension_x and self.y_value <= mouse[1] <= dimension_y:
+                if self.rect.collidepoint(event.pos):
                     return True
         return False
 
 
-class Button_grid:
+class Buttongrid:
     """
     Crée un bouton invisible de la taille de la grille
     """
@@ -329,28 +334,29 @@ class Button_grid:
         """
         self.dimension_grid = dimension_grid
         self.grid_size = int(sqrt(len(grid_size)))
+        self.mouse = pygame.mouse.get_pos()
         self.resize(window)
 
     def resize(self, window):
         """
         Permet de redimensionner le bouton
         """
-        window_w, window_h = window.get_size()
+        window_w = (window.get_size())[0]
         self.x_value = (window_w - self.dimension_grid) // 2
-        self.y_value = 0
-        self.w_value = self.dimension_grid
-        self.h_value = self.dimension_grid
+        y_value = 0
+        w_value = self.dimension_grid
+        h_value = self.dimension_grid
+        self.rect = pygame.Rect(self.x_value, y_value,
+                                w_value, h_value)
 
     def is_pressed(self, event):
         """
         Détecte si le bouton est pressé
         """
-        dimension_x = self.x_value + self.w_value
-        dimension_y = self.y_value + self.h_value
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                self.mouse = pygame.mouse.get_pos()
-                if self.x_value <= self.mouse[0] <= dimension_x and self.y_value <= self.mouse[1] <= dimension_y:
+                if self.rect.collidepoint(event.pos):
+                    self.mouse = pygame.mouse.get_pos()
                     return True
         return False
 
@@ -368,7 +374,7 @@ class Button_grid:
         return int(coord_x + coord_y * self.grid_size)
 
 
-class Button_image:
+class Buttonimage:
     """
     Permet de créer un bouton de forme carré avec une image
     """
@@ -388,11 +394,11 @@ class Button_image:
         self.image = image
         self.color = COLOR[color]
         self.resize(window)
-    
+
     def resize(self, window):
         """
         Permet de redimensionner le bouton carré et l'image
-        par rapport au dimension de la fenêtre 'window' 
+        par rapport au dimension de la fenêtre 'window'
         """
         window_w, window_h = window.get_size()
         self.x_value = round(self.relative_position[0] * window_w)
@@ -402,24 +408,21 @@ class Button_image:
                                 self.w_value, self.w_value)
         scale = self.w_value
         self.image = pygame.transform.scale(self.image, (scale, scale))
-    
+
     def draw(self, surface):
         """
         Permet d'afficher le bouton carré avec l'image
         """
         surface.blit(self.image, (self.x_value, self.y_value))
         pygame.draw.rect(surface, self.color, self.rect, 2)
-    
+
     def is_pressed(self, event):
         """
         Détecte si le bouton est pressé
         """
-        dimension_x = self.x_value + self.w_value
-        dimension_y = self.y_value + self.w_value
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                mouse = pygame.mouse.get_pos()
-                if self.x_value <= mouse[0] <= dimension_x and self.y_value <= mouse[1] <= dimension_y:
+                if self.rect.collidepoint(event.pos):
                     return True
         return False
 
@@ -456,12 +459,12 @@ class Text:
         de la fenêtre 'window'
         """
         window_w, window_h = window.get_size()
-        self.x_value = round(self.relative_position[0] * window_w)
-        self.y_value = round(self.relative_position[1] * window_h)
-        self.w_value = round(self.relative_position[2] * window_w)
-        self.h_value = round(self.relative_position[3] * window_h)
-        self.rect = pygame.Rect(self.x_value, self.y_value,
-                                self.w_value, self.h_value)
+        x_value = round(self.relative_position[0] * window_w)
+        y_value = round(self.relative_position[1] * window_h)
+        w_value = round(self.relative_position[2] * window_w)
+        h_value = round(self.relative_position[3] * window_h)
+        self.rect = pygame.Rect(x_value, y_value,
+                                w_value, h_value)
         font_size = get_font_size(round(self.rect.h * 0.6))
         font = pygame.font.SysFont("Impact", font_size)
         self.text_image = font.render(self.text, 1, COLOR['WHITE'])
@@ -478,7 +481,7 @@ class InputBox:
     """
     Crée une zone d'insertion de texte
     """
-    def __init__(self, window, relative_position, color, text='', max_len=10):
+    def __init__(self, window, relative_position, color, text=''):
         """
         Initialise la zone d'insertion avec comme argument:
         - 'window' qui correspond à la fenêtre sur laquel il va se générer
@@ -493,15 +496,16 @@ class InputBox:
             - 'h' correspond à la hauteur de la zone par rapport à la
                 hauteur de la fenêtre
                 0 -> texte inexistant / 1 -> hauteur de la fenêtre
-        - 'text'"""
+        - 'other' un 2-uple contenant:
+            - 'text' le texte avec lequel il travaille
+            - 'max_len' la longueur maximale de la chaîne de caractère
+        """
         self.relative_position = relative_position
-        self.max_len = max_len
         self.text = text
         self.color = COLOR[color]
         self.active = False
-        self.window = window
+        self.text_surface = ''
         self.resize(window)
-        
 
     def resize(self, window):
         """
@@ -509,18 +513,22 @@ class InputBox:
         de la fenêtre 'window'
         """
         window_w, window_h = window.get_size()
-        self.x_value = round(self.relative_position[0] * window_w)
-        self.y_value = round(self.relative_position[1] * window_h)
-        self.w_value = round(self.relative_position[2] * window_w)
-        self.h_value = round(self.relative_position[3] * window_h)
-        self.rect = pygame.Rect(self.x_value, self.y_value,
-                                self.w_value, self.h_value)
+        x_value = round(self.relative_position[0] * window_w)
+        y_value = round(self.relative_position[1] * window_h)
+        w_value = round(self.relative_position[2] * window_w)
+        h_value = round(self.relative_position[3] * window_h)
+        self.rect = pygame.Rect(x_value, y_value,
+                                w_value, h_value)
         font_size = get_font_size(round(self.rect.h * 0.6))
         self.font = pygame.font.SysFont("Impact", font_size)
         self.text_surface = self.font.render(self.text, 1, COLOR['WHITE'])
         self.text_pos = self.text_surface.get_rect(center=self.rect.center)
-    
-    def interact(self, event):
+
+    def interact(self, window, event):
+        """
+        Permet d'intéragir avec la zone de saisie, aussi bien
+        pour la sélectionner que pour écrire
+        """
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(event.pos):
                 self.active = not self.active
@@ -530,76 +538,36 @@ class InputBox:
             if self.active:
                 if event.key == pygame.K_BACKSPACE:
                     self.text = self.text[:-1]
-                elif len(self.text) <= self.max_len - 1 and not event.key == pygame.K_RETURN:
+                elif len(self.text) <= 9 and not event.key == pygame.K_RETURN:
                     self.text += event.unicode
-                self.resize(self.window)
+                self.resize(window)
             self.text_surface = self.font.render(self.text, True, COLOR['WHITE'])
-        
+
     def return_pressed(self, event):
+        """
+        Renvoie 'True' si la touche Return est pressé,
+        sinon renvoie 'False'
+        """
         if event.type == pygame.KEYDOWN:
             if self.active:
                 if event.key == pygame.K_RETURN:
                     return True
         return False
-    
+
     def get_text(self):
+        """
+        Permet de récupérer le texte qui y est écrit
+        """
         text = self.text
         return text
 
     def draw(self, screen):
+        """
+        Permet d'afficher la zone de saisie sur la fenêtre 'screen'
+        """
         pygame.draw.rect(screen, COLOR['BLACK'], self.rect)
         screen.blit(self.text_surface, self.text_pos)
         pygame.draw.rect(screen, self.color, self.rect, 2)
-
-
-class Fence:
-    """
-    Génère un quadrillage centré horizontalement et en haut de la fenêtre
-    dans une zone précise
-    """
-    def __init__(self, window, nbr_box, dimension_grid):
-        """
-        Initialise un quadrillage de forme carré avec comme argument
-        - 'window' qui correspond à la fenêtre sur laquel il va se générer
-        - 'nbr_box' qui correspond aux nombres de case que le quadrillage
-            doit comporter sur un côté
-        """
-        self.nbr_box = nbr_box
-        self.dimension_grid = dimension_grid
-        self.resize(window)
-
-    def resize(self, window):
-        """
-        - Permet de centré la quadrillage carré au milieu de la longueur en haut
-            quelque soit le nombre de case
-        - Le carré doit apparaitre dans une zone défini de la fenêtre
-            dans (0.2, 0, 0.8, 0.8), ce qui fait par conséquence varié la
-            longueur du côté et l'emplacement du quadrillage
-        """
-        window_w, window_h = window.get_size()
-        # Permet de savoir le côté des cases du quadrillage
-        self.dimension_box = self.dimension_grid / self.nbr_box
-        # Permet de savoir l'abscisse d'origine du quadrillage
-        self.start_grid = ((window_w - self.dimension_grid) / 2)
-
-    def draw(self, frame):
-        """
-        Permet d'afficher le quadrillage en dessinant les lignes
-        """
-        x_value = self.start_grid
-        y_value = 0
-        for i in range(self.nbr_box + 1):
-            # Trace les lignes du quadrillage
-            self.line_start1 = x_value, 0
-            self.line_finish1 = x_value, 0 + self.dimension_grid
-            self.line_start2 = self.start_grid , y_value
-            self.line_finish2 = self.start_grid + self.dimension_grid, y_value
-            
-            x_value += self.dimension_box
-            y_value += self.dimension_box
-        pygame.draw.rect(frame, COLOR['DARK_GRAY'],
-                         (self.start_grid, 0,
-                         self.dimension_grid, self.dimension_grid), 1)
 
 
 class Line:
@@ -627,12 +595,12 @@ class Line:
         'window'
         """
         window_w, window_h = window.get_size()
-        self.x_value = round(self.relative_position[0] * window_w)
-        self.y_value = round(self.relative_position[1] * window_h)
-        self.w_value = round(self.relative_position[2] * window_w)
-        self.h_value = round(self.relative_position[3] * window_h)
-        self.rect_start = self.x_value, self.y_value
-        self.rect_finish = self.w_value, self.h_value
+        x_value = round(self.relative_position[0] * window_w)
+        y_value = round(self.relative_position[1] * window_h)
+        w_value = round(self.relative_position[2] * window_w)
+        h_value = round(self.relative_position[3] * window_h)
+        self.rect_start = x_value, y_value
+        self.rect_finish = w_value, h_value
 
     def draw(self, surface):
         """

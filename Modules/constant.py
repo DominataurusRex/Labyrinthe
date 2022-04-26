@@ -1,3 +1,6 @@
+"""
+Ce module s'occupe des constante utiliser dans les autres modules
+"""
 import pygame
 
 COLOR = {'BLUE': (0, 59, 111),
@@ -37,6 +40,9 @@ FONT_HEIGHT = [19, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 35, 37,
 
 # Initialise les images
 def level_init():
+    """
+    Permet de précharger toute les textures au lancement du jeu
+    """
     image = pygame.image.load("Image/level_texture.png")
     x_value = image.get_width()
     y_value = image.get_height()
@@ -53,5 +59,5 @@ def level_init():
     texture['RIGHT'] = image_charac.subsurface((0, 32, 32, 32))
     texture['UP'] = image_charac.subsurface((32, 32, 32, 32))
     return texture
-    
+
 TEXTURE = level_init()
