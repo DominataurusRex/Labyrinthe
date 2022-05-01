@@ -46,7 +46,7 @@ def level_init():
     image = pygame.image.load("Image/level_texture.png")
     x_value = image.get_width()
     y_value = image.get_height()
-    place = 1
+    place = -1
     texture = {}
     for height in range(y_value // 32):
         for width in range(x_value // 32):

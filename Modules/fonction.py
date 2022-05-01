@@ -4,7 +4,6 @@ Ce module s'occupe des différentes fonction nécessaire au bon fonctionnement d
 import json
 import os
 from math import sqrt
-from time import sleep
 import pygame
 from Modules.constant import COLOR, FONT_HEIGHT, TEXTURE
 
@@ -25,47 +24,61 @@ def get_font_size(font_height):
             pass
         return i + 12
 
-def save_game(name, grid):
+def verif_size_window(window, event):
+    """
+    Permet de vérifier si 'window' n'est pas trop petit
+    """
+    if event.type == pygame.VIDEORESIZE:
+        window_w, window_h = window.get_size()
+        if window_w < 500 or window_h < 250:
+            window = pygame.display.set_mode((500, 250), pygame.RESIZABLE)
+        return True
+    return False
+
+def save_game(name, folder, grid):
     """
     Permet de sauvegarder 'grid' de forme dico en format json
-    dans l'emplacement 'Others/Game_save/'name'.json',
+    dans l'emplacement 'Others/Create_game/Save_level/'name'.json',
     avec'name' le dossier d'arriver
     """
-    filename = "Others/Game_save/" + name + ".json"
+    filename = "Others/Create_game/Save_" + folder + "/" + name + ".json"
 
     with open(filename, "w") as file:
         json.dump(grid, file)
     file.close()
 
-def load_game(name):
+def load_game(name, folder):
     """
     Permet de charger le dico stocker en format json
     de la grille 'name' dans l'emplacement
-    'Others/Game_save/'name'.json'
+    'Others/Create_game/Save_level/'name'.json'
     """
-    filename = "Others/Game_save/" + name + ".json"
+    filename = "Others/Create_game/Save_" + folder + "/" + name + ".json"
 
     with open(filename) as file:
         dict_grid = json.load(file)
     file.close()
     return dict_grid
 
-def get_list_game():
+def get_list_game(mode):
     """
     Permet d'obtenir la liste des sauvegardes
-    dans l'emplacement 'Others/Game_save/'
+    dans l'emplacement 'Others/Create_game/Save_level/'
     """
-    list_game = os.listdir('Others/Game_save/')
+    list_game = os.listdir('Others/Create_game/Save_' + mode + '/')
     return list_game
 
 def create_new_grid(dimension):
     """
-    Permet de générer un dico avec pour clé les coordonnées
-    x et y séparer d'un '-', sous la forme str
+    Permet de générer un dico avec pour clé le numéro de la case
+    allant de 1 à dimension^2 sous forme str
+    Les valeurs de chaque clé correspondent à :
+        (('id de l'objet', 'info de l'objet'*), 'gravité du joueur'*)
+        avec * = None si non spécifié
     """
     grid = {}
     for box in range(dimension ** 2):
-        grid[str(box)] = 0
+        grid[str(box)] = ((0, None), None)
     return grid
 
 def get_dimension_grid(window):
@@ -80,7 +93,7 @@ def get_dimension_grid(window):
         return x_value
     return y_value
 
-def blit_grid(window, grid, dimension_grid):
+def blit_grid(window, grid):
     """
     Permet d'afficher la grille avec les objets
     avec comme argument :
@@ -88,24 +101,40 @@ def blit_grid(window, grid, dimension_grid):
     - 'grid' la grille de jeu
     - 'dimension_grille' la taille de la grille en pixel
     """
+    dimension_grid = get_dimension_grid(window)
     frame = pygame.Surface(window.get_size())
     grid_size = int(sqrt(len(grid)))
-    scale = int(dimension_grid // grid_size)
+    scale = int(dimension_grid / grid_size)
     window_w = (window.get_size())[0]
     for box in grid:
         coordonne_box = int(box) // grid_size, int(box) % grid_size
         x_coord = (window_w - dimension_grid) / 2
         x_value = int(x_coord + (dimension_grid / grid_size) * coordonne_box[1])
         y_value = int((dimension_grid / grid_size) * coordonne_box[0])
-        if grid[box] != 0:
-            image = pygame.transform.scale(TEXTURE[grid[box]], (scale, scale))
+        if grid[box][0][0] != 0:
+            image = pygame.transform.scale(TEXTURE[grid[box][0][0]], (scale, scale))
             frame.blit(image, (x_value + 1, y_value + 1))
+        if grid[box][1] is not None:
+            image_player = pygame.transform.scale(TEXTURE[grid[box][1]], (scale, scale))
+            frame.blit(image_player, (x_value + 1, y_value + 1))
     return frame
 
-def blit_appearance(surface, color):
+def blit_appearance(surface, color, grid=''):
     """
     Permet d'afficher l'affichage utilisé pour différente raison
     """
+    window_w = (surface.get_size())[0]
+    dimension_grid = get_dimension_grid(surface)
+    start_grid = (window_w - dimension_grid) // 2
+    if grid != '':
+        grid_size = int(sqrt(len(grid)))
+        box_size = dimension_grid / grid_size
+        for x_value in range(1, grid_size):
+            for y_value in range(1, grid_size):
+                corner = pygame.Rect(start_grid + box_size * x_value, box_size * y_value, 2, 2)
+                pygame.draw.rect(surface, COLOR['WHITE'], corner)
+    outline = pygame.Rect(start_grid, 0, dimension_grid + 1, dimension_grid + 1)
+    pygame.draw.rect(surface, COLOR['GRAY'], outline, 1)
     line_1 = Line(surface, (0, 0.7, 1, 0.7), color[1])
     line_1.draw(surface)
     line_2 = Line(surface, (0.2, 0, 0.2, 0.7), color[1])
@@ -118,12 +147,12 @@ def create_button_build(surface):
     Permet d'afficher le boutons permettant de choisir
     ce que l'on souhaite placer dans la grille
     """
-    longueur = len(TEXTURE) - 3
+    longueur = len(TEXTURE) - 14
     lenght = 1
     button_return = []
     for i in range(3):
         y_value = 0.735 + ((0.045 + 0.04) * i)
-        for j in range(20):
+        for j in range(15):
             x_value = 0.025 + ((0.025 + 0.04) * j)
             button = Buttonimage(surface, (x_value, y_value, 0.04), TEXTURE[lenght])
             button.draw(surface)
@@ -133,6 +162,28 @@ def create_button_build(surface):
                 return button_return
     return None
 
+def shift_player(grid, pos_player, gravity):
+    """
+    Vérifie si le joueur ne se trouve pas au bord de la grille avec:
+    - 'grid' correspond à la grille
+    - 'pos_player' la position initiale du joueur
+    - 'gravity' la gravité à laquelle le joueur est soumis
+    """
+    dimension_grid = int(sqrt(len(grid)))
+    if gravity == "DOWN":
+        if not pos_player + dimension_grid > len(grid) - 1:
+            return False, pos_player + dimension_grid
+    elif gravity == "RIGHT":
+        if not (pos_player + 1) % dimension_grid == 0:
+            return False, pos_player + 1
+    elif gravity == "UP":
+        if not pos_player - dimension_grid < 0:
+            return False, pos_player - dimension_grid
+    elif gravity == "LEFT":
+        if not (pos_player - 1) % dimension_grid == dimension_grid - 1:
+            return False, pos_player - 1
+    return True, None
+
 def play_game(grid, gravity, pos_player):
     """
     Permet de déplacer le joueur par rapport à la gravité
@@ -140,31 +191,15 @@ def play_game(grid, gravity, pos_player):
     en mouvement
     """
     coin = 0
-    limit = True
-    dimension_grid = int(sqrt(len(grid)))
-    if gravity == "DOWN":
-        if not pos_player + dimension_grid > len(grid) - 1:
-            new_pos = pos_player + dimension_grid
-            limit = False
-    elif gravity == "RIGHT":
-        if not (pos_player + 1) % dimension_grid == 0:
-            new_pos = pos_player + 1
-            limit = False
-    elif gravity == "UP":
-        if not pos_player - dimension_grid < 0:
-            new_pos = pos_player - dimension_grid
-            limit = False
-    elif gravity == "LEFT":
-        if not (pos_player - 1) % dimension_grid == dimension_grid - 1:
-            new_pos = pos_player - 1
-            limit = False
+    limit, new_pos = shift_player(grid, pos_player, gravity)
     if not limit:
-        sleep(0.01)
-        if grid[str(new_pos)] != 3:
-            if grid[str(new_pos)] == 4:
+        if grid[str(new_pos)][0][0] != 3:
+            # Pour les pièces
+            if grid[str(new_pos)][0][0] == 8:
                 coin = 1
-            grid[str(pos_player)] = 0
-            grid[str(new_pos)] = gravity
+                grid[str(new_pos)][0][0] = 0
+            grid[str(pos_player)][1] = None
+            grid[str(new_pos)][1] = gravity
             pos_player = new_pos
             lock = True
         else:
@@ -178,10 +213,11 @@ def set_pos_player(grid, gravity):
     Remplace la zone d'apparition par le joueur et
     renvoie son emplacement lors de l'initialisation
     """
+    place = None
     for value in grid:
-        if grid[value] == 1:
+        if grid[value][0][0] == 1:
             place = int(value)
-            grid[value] = gravity
+            grid[value][1] = gravity
     return grid, place
 
 def set_gravity(event, gravity):
@@ -191,11 +227,11 @@ def set_gravity(event, gravity):
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_UP:
             return 'UP'
-        elif event.key == pygame.K_RIGHT:
+        if event.key == pygame.K_RIGHT:
             return 'RIGHT'
-        elif event.key == pygame.K_DOWN:
+        if event.key == pygame.K_DOWN:
             return 'DOWN'
-        elif event.key == pygame.K_LEFT:
+        if event.key == pygame.K_LEFT:
             return 'LEFT'
     return gravity
 
@@ -206,7 +242,7 @@ def verif_level_save(grid, name_save):
     """
     count_enter = 0
     for case in grid:
-        if grid[case] == 1:
+        if grid[case][0][0] == 1:
             count_enter += 1
     # Pas d'entrée
     if count_enter < 1:
@@ -224,11 +260,11 @@ def verif_level_save(grid, name_save):
     else:
         return 0
 
-def verif_level_load(name_load):
+def verif_level_load(name_load, mode):
     """
     Permet de vérifier si 'name_load' répond aux attentes
     """
-    if name_load + ".json" in get_list_game():
+    if name_load + ".json" in get_list_game(mode):
         return 0
     return -1
 
@@ -324,16 +360,16 @@ class Buttongrid:
     """
     Crée un bouton invisible de la taille de la grille
     """
-    def __init__(self, window, dimension_grid, grid_size):
+    def __init__(self, window, grid):
         """
         Initialise le bouton avec comme argument:
         - 'window' qui correspond à la fenêtre sur laquel il va se générer
         - 'dimension_grid' qui correspond à la longueur du côté du
             quadrillage
-        - 'grid_size' qui correspond au nombre de case qu'il y a par côté
+        - 'grid' qui correspond à la grille
         """
-        self.dimension_grid = dimension_grid
-        self.grid_size = int(sqrt(len(grid_size)))
+        self.dimension_grid = get_dimension_grid(window)
+        self.grid_size = int(sqrt(len(grid)))
         self.mouse = pygame.mouse.get_pos()
         self.resize(window)
 
@@ -481,7 +517,7 @@ class InputBox:
     """
     Crée une zone d'insertion de texte
     """
-    def __init__(self, window, relative_position, color, text=''):
+    def __init__(self, window, relative_position, text=''):
         """
         Initialise la zone d'insertion avec comme argument:
         - 'window' qui correspond à la fenêtre sur laquel il va se générer
@@ -502,7 +538,6 @@ class InputBox:
         """
         self.relative_position = relative_position
         self.text = text
-        self.color = COLOR[color]
         self.active = False
         self.text_surface = ''
         self.resize(window)
@@ -554,12 +589,17 @@ class InputBox:
                     return True
         return False
 
-    def get_text(self):
+    def get_string(self):
         """
-        Permet de récupérer le texte qui y est écrit
+        Permet de récupérer le texte qui y est écrit en chaîne de caractère
         """
-        text = self.text
-        return text
+        return str(self.text)
+
+    def get_floating(self):
+        """
+        Permet de récupérer le texte qui y est écrit en flottant
+        """
+        return float(self.text)
 
     def draw(self, screen):
         """
@@ -567,7 +607,7 @@ class InputBox:
         """
         pygame.draw.rect(screen, COLOR['BLACK'], self.rect)
         screen.blit(self.text_surface, self.text_pos)
-        pygame.draw.rect(screen, self.color, self.rect, 2)
+        pygame.draw.rect(screen, COLOR['GRAY'], self.rect, 2)
 
 
 class Line:
