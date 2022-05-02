@@ -15,6 +15,7 @@
  "YELLOW": "Jaune",
  "RED": "Rouge",
  "Color": "Couleur - ",
+ "Exit_code_-3": "- La valeur saisie doit être un entier -",
  "Exit_code_-2": "- Dimension comprise entre 10x10 et 20x20 -",
  "Exit_code_-1": "- Fichier introuvable -",
  "Exit_code_0": "- Niveau sauvegardé -",

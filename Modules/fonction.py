@@ -99,7 +99,6 @@ def blit_grid(window, grid):
     avec comme argument :
     - 'window' la fenêtre sur laquel afficher la grille
     - 'grid' la grille de jeu
-    - 'dimension_grille' la taille de la grille en pixel
     """
     dimension_grid = get_dimension_grid(window)
     frame = pygame.Surface(window.get_size())
@@ -265,8 +264,8 @@ def verif_level_load(name_load, mode):
     Permet de vérifier si 'name_load' répond aux attentes
     """
     if name_load + ".json" in get_list_game(mode):
-        return 0
-    return -1
+        return True
+    return False
 
 class GameStrings:
     """
@@ -594,12 +593,6 @@ class InputBox:
         Permet de récupérer le texte qui y est écrit en chaîne de caractère
         """
         return str(self.text)
-
-    def get_floating(self):
-        """
-        Permet de récupérer le texte qui y est écrit en flottant
-        """
-        return float(self.text)
 
     def draw(self, screen):
         """

@@ -5,8 +5,8 @@ import pygame
 
 from Modules.fonction import GameStrings, Button, Buttongrid, Text, InputBox
 from Modules.fonction import verif_size_window, save_game, load_game, create_new_grid, blit_grid
-from Modules.fonction import blit_appearance, create_button_build, play_game, set_gravity, set_pos_player
-from Modules.fonction import verif_level_save, verif_level_load, get_list_game
+from Modules.fonction import blit_appearance, create_button_build, play_game, set_gravity
+from Modules.fonction import set_pos_player, verif_level_save, verif_level_load, get_list_game
 from Modules.constant import COLOR, COLOR_TURN, LANG
 
 game_strings = GameStrings(LANG)
@@ -187,6 +187,7 @@ def tinker_menu(window, color, mode):
     name_load = ''
     list_button_tinker = create_tinker_menu(window, color)
     proceed = True
+    grid_size = None
     while proceed:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -200,16 +201,10 @@ def tinker_menu(window, color, mode):
                 main_menu(window, color)
             # Input Taille
             elif list_button_tinker[1].return_pressed(event):
-                grid_size = int(list_button_tinker[1].get_floating() // 1)
+                grid_size = list_button_tinker[1].get_string()
             # Bouton Creer
-            elif list_button_tinker[2].is_pressed(event):
-                if 10 <= grid_size <= 20:
-                    proceed = False
-                    grid = create_new_grid(grid_size)
-                    build_menu(window, color, (grid, mode))
-                else:
-                    popup_menu(window, color, 'window_exit', '-2')
-                    list_button_tinker = create_tinker_menu(window, color)
+            elif tm_creation_button((window, color, mode), list_button_tinker[2], grid_size, event):
+                proceed = False
             # Bouton Information
             elif list_button_tinker[3].is_pressed(event):
                 popup_menu(window, color, 'list_game', mode)
@@ -218,15 +213,8 @@ def tinker_menu(window, color, mode):
             elif list_button_tinker[4].return_pressed(event):
                 name_load = list_button_tinker[4].get_string()
             # Bouton Load
-            elif list_button_tinker[5].is_pressed(event):
-                exit_code = verif_level_load(name_load, mode)
-                if exit_code == 0:
-                    proceed = False
-                    grid = load_game(name_load, 'level')
-                    build_menu(window, color, (grid, mode), name_load)
-                else:
-                    popup_menu(window, color, 'window_exit', exit_code)
-                    list_button_tinker = create_tinker_menu(window, color)
+            elif tm_loading_button((window, color, mode), list_button_tinker[5], name_load, event):
+                proceed = False
             if proceed:
                 # Zone de saisie
                 list_button_tinker[1].interact(window, event)
@@ -235,13 +223,69 @@ def tinker_menu(window, color, mode):
                 list_button_tinker[4].draw(window)
                 pygame.display.flip()
 
-
-def create_build_menu(window, color, grid, name_save):
+def tm_creation_button(display, button, grid_size, event):
     """
-    Mise en place de la logique du 'build_menu' avec:
+    Fonction annexe de 'tinker_menu'
+    Fonction de vérification pour la création de grille avec:
+    - 'display' un 3-uples contenant:
+        - 'window' la fenêtre
+        - 'color' la couleur
+    - 'button' le bouton à tester
+    - 'size' la taille de la grille
+    - 'event' la liste d'évenement pygame
+    """
+    if button.is_pressed(event):
+        try:
+            grid_size = int(grid_size)
+            if 10 <= grid_size <= 20:
+                grid = create_new_grid(grid_size)
+                if display[2] == 'level':
+                    build_level_menu(display[0], display[1], grid)
+                else:
+                    pass
+                return True
+            popup_menu(display[0], display[1], 'window_exit', -2)
+            create_tinker_menu(display[0], display[1])
+        except ValueError:
+            popup_menu(display[0], display[1], 'window_exit', -3)
+            create_tinker_menu(display[0], display[1])
+        except TypeError:
+            popup_menu(display[0], display[1], 'window_exit', -3)
+            create_tinker_menu(display[0], display[1])
+    return False
+
+def tm_loading_button(display, button, name, event):
+    """
+    Fonction annexe de 'tinker_menu'
+    Fonction de vérification pour la sauvegarde de grille avec:
+    - 'display' un 3-uples contenant:
+        - 'window' la fenêtre
+        - 'color' la couleur
+        - 'mode' le mode de création (level/world)
+    - 'button' le bouton à tester
+    - 'name' le nom à chercher
+    - 'event' la liste d'évenement pygame
+    """
+    if button.is_pressed(event):
+        if verif_level_load(name, display[2]):
+            grid = load_game(name, display[2])
+            if display[2] == 'level':
+                build_level_menu(display[0], display[1], grid, name)
+            else:
+                pass
+            return True
+        popup_menu(display[0], display[1], 'window_exit', -1)
+        create_tinker_menu(display[0], display[1])
+    return False
+
+
+def create_build_level_menu(window, color, grid, name_save):
+    """
+    Mise en place de la logique du 'build_level_menu' avec:
     - 'window' la fenêtre
     - 'color' la couleur
     - 'grid' la grille de jeu
+    - 'name_save' le nom de sauvegarde
     """
     frame = pygame.Surface(window.get_size())
 
@@ -275,13 +319,13 @@ def create_build_menu(window, color, grid, name_save):
 
     return return_button, save_button, grid_button, button_block, test_button, save_name_input
 
-def build_menu(window, color, game, name_save=''):
+def build_level_menu(window, color, grid, name_save=''):
     """
-    Affichage du 'build_menu'
+    Affichage du 'build_level_menu'
     """
-    # game --> (grid, mode)
-    list_button_build = create_build_menu(window, color, game[0], name_save)
+    list_button_build = create_build_level_menu(window, color, grid, name_save)
     rajout_case = 0
+    display = (window, color, 'level')
     proceed = True
     while proceed:
         for event in pygame.event.get():
@@ -289,42 +333,25 @@ def build_menu(window, color, game, name_save=''):
                 pygame.quit()
                 return
             if verif_size_window(window, event):
-                list_button_build = create_build_menu(window, color, game[0], name_save)
+                list_button_build = create_build_level_menu(window, color, grid, name_save)
             # Bouton Retour
             elif list_button_build[0].is_pressed(event):
                 proceed = False
-                tinker_menu(window, color, game[1])
-            # Bouton Sauvegarde
-            elif list_button_build[1].is_pressed(event):
-                exit_code = verif_level_save(game[0], name_save)
-                if exit_code == 0:
-                    save_game(name_save, game[1], game[0])
-                popup_menu(window, color, 'window_exit', exit_code)
-                list_button_build = create_build_menu(window, color, game[0], name_save)
-            # Grille
-            elif list_button_build[2].is_pressed(event):
-                coord = list_button_build[2].get_coord()
-                if game[0][str(coord)][0][0] == 0:
-                    game[0][str(coord)] = ((rajout_case, None), game[0][str(coord)][1])
-                else:
-                    game[0][str(coord)] = ((0, None), game[0][str(coord)][1])
-                list_button_build = create_build_menu(window, color, game[0], name_save)
+                tinker_menu(window, color, 'level')
             # Bouton Test
-            elif list_button_build[4].is_pressed(event):
-                exit_code = verif_level_save(game[0], name_save)
-                popup_menu(window, color, 'window_exit', exit_code)
-                if exit_code == 0:
-                    proceed = False
-                    save_game(name_save, game[1], game[0])
-                    play_menu(window, color, name_save)
-                    if pygame.get_init():
-                        build_menu(window, color, game, name_save)
-                else:
-                    list_button_build = create_build_menu(window, color, game[0], name_save)
+            elif bl_saving_menu(display, list_button_build[4], (grid, name_save), event):
+                proceed = False
+                play_menu(window, color, name_save)
+                if pygame.get_init():
+                    build_level_menu(window, color, grid, name_save)
             # Zone de saisie entré
             elif list_button_build[5].return_pressed(event):
                 name_save = list_button_build[5].get_string()
             if proceed:
+                # Bouton Sauvegarde
+                bl_saving_menu(display, list_button_build[1], (grid, name_save), event)
+                # Changement de case
+                bl_change_box(display, list_button_build[2], (grid, name_save, rajout_case), event)
                 # Button créateur
                 list_touch = list_button_build[3]
                 place = 1
@@ -336,6 +363,51 @@ def build_menu(window, color, game, name_save=''):
                 list_button_build[5].interact(window, event)
                 list_button_build[5].draw(window)
                 pygame.display.flip()
+
+def bl_change_box(display, button, game, event):
+    """
+    Fonction annexe des 'build_menu'
+    Permet de changer l'objet dans la casse cliqué avec:
+    - 'display' un 2-uples avec:
+        - 'window' la fenêtre
+        - 'color' la couleur
+    - 'button' le bouton cliqué
+    - 'game' un 2-uples avec:
+        - 'grid' la grille de jeu
+        - 'name_grid' le nom de la grille
+        - 'new_case' l'objet à rajouté dans la case
+    """
+    if button.is_pressed(event):
+        coord = button.get_coord()
+        if game[0][str(coord)][0][0] == 0:
+            game[0][str(coord)] = ((game[2], None), game[0][str(coord)][1])
+        else:
+            game[0][str(coord)] = ((0, None), game[0][str(coord)][1])
+        create_build_level_menu(display[0], display[1], game[0], game[1])
+
+def bl_saving_menu(display, button, game, event):
+    """
+    Fonction annexe des 'build_menu'
+    Fonction de vérification pour la sauvegarde de la grille avec:
+    - 'display' un 3-uples contenant:
+        - 'window' la fenêtre
+        - 'color' la couleur
+        - 'mode' le mode de création (level/world)
+    - 'button' le bouton à tester
+    - 'game' un 2-uples contenant:
+        - 'grid' la grille
+        - 'grid_name' le nom de la grille
+    - 'event' la liste d'évenement pygame
+    """
+    if button.is_pressed(event):
+        exit_code = verif_level_save(game[0], game[1])
+        popup_menu(display[0], display[1], 'window_exit', exit_code)
+        if exit_code == 0:
+            save_game(game[1], display[2], game[0])
+            create_build_level_menu(display[0], display[1], game[0], game[1])
+            return True
+        create_build_level_menu(display[0], display[1], game[0], game[1])
+    return False
 
 
 def create_window_exit_menu(window, color, exit_code):

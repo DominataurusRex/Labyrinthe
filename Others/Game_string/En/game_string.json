@@ -15,6 +15,7 @@
  "YELLOW": "Yellow",
  "RED": "Red",
  "Color": "Color - ",
+ "Exit_code_-3": "- The value entered must be an integer -",
  "Exit_code_-2": "- Size between 10x10 and 20x20 -",
  "Exit_code_-1": "- File not found -",
  "Exit_code_0": "- Saved level -",
