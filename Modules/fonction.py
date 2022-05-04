@@ -68,7 +68,7 @@ def get_list_game(mode):
     list_game = os.listdir('Others/Create_game/Save_' + mode + '/')
     return list_game
 
-def create_new_grid(dimension):
+def create_new_grid(dimension, mode):
     """
     Permet de générer un dico avec pour clé le numéro de la case
     allant de 1 à dimension^2 sous forme str
@@ -79,6 +79,8 @@ def create_new_grid(dimension):
     grid = {}
     for box in range(dimension ** 2):
         grid[str(box)] = ((0, None), None)
+    if mode == 'world':
+        grid['order'] = []
     return grid
 
 def get_dimension_grid(window):
@@ -103,19 +105,20 @@ def blit_grid(window, grid):
     dimension_grid = get_dimension_grid(window)
     frame = pygame.Surface(window.get_size())
     grid_size = int(sqrt(len(grid)))
-    scale = int(dimension_grid / grid_size)
+    scale = int(dimension_grid / grid_size) + 1
     window_w = (window.get_size())[0]
     for box in grid:
-        coordonne_box = int(box) // grid_size, int(box) % grid_size
-        x_coord = (window_w - dimension_grid) / 2
-        x_value = int(x_coord + (dimension_grid / grid_size) * coordonne_box[1])
-        y_value = int((dimension_grid / grid_size) * coordonne_box[0])
-        if grid[box][0][0] != 0:
-            image = pygame.transform.scale(TEXTURE[grid[box][0][0]], (scale, scale))
-            frame.blit(image, (x_value + 1, y_value + 1))
-        if grid[box][1] is not None:
-            image_player = pygame.transform.scale(TEXTURE[grid[box][1]], (scale, scale))
-            frame.blit(image_player, (x_value + 1, y_value + 1))
+        if box != 'order':
+            coordonne_box = int(box) // grid_size, int(box) % grid_size
+            x_coord = (window_w - dimension_grid) / 2
+            x_value = int(x_coord + (dimension_grid / grid_size) * coordonne_box[1])
+            y_value = int((dimension_grid / grid_size) * coordonne_box[0])
+            if grid[box][0][0] != 0:
+                image = pygame.transform.scale(TEXTURE[grid[box][0][0]], (scale, scale))
+                frame.blit(image, (x_value + 1, y_value + 1))
+            if grid[box][1] is not None:
+                image_player = pygame.transform.scale(TEXTURE[grid[box][1]], (scale, scale))
+                frame.blit(image_player, (x_value + 1, y_value + 1))
     return frame
 
 def blit_appearance(surface, color, grid=''):
@@ -141,53 +144,77 @@ def blit_appearance(surface, color, grid=''):
     line_3 = Line(surface, (0.8, 0, 0.8, 0.7), color[1])
     line_3.draw(surface)
 
-def create_button_build(surface):
+def create_button_build(surface, mode):
     """
     Permet d'afficher le boutons permettant de choisir
     ce que l'on souhaite placer dans la grille
     """
-    longueur = len(TEXTURE) - 14
-    lenght = 1
-    button_return = []
+    if mode == 'level':
+        place = 1
+        end_place = 9
+    else:
+        place =  -4
+        end_place = -2
+    button_return = {}
     for i in range(3):
         y_value = 0.735 + ((0.045 + 0.04) * i)
         for j in range(15):
             x_value = 0.025 + ((0.025 + 0.04) * j)
-            button = Buttonimage(surface, (x_value, y_value, 0.04), TEXTURE[lenght])
+            button = Buttonimage(surface, (x_value, y_value, 0.04), TEXTURE[place])
             button.draw(surface)
-            button_return.append(button)
-            lenght = lenght + 1
-            if lenght >= longueur:
+            button_return[place] = button
+            place += 1
+            if place >= end_place + 1:
                 return button_return
     return None
 
-def shift_player(grid, pos_player, gravity):
+def play_world(grid, direction, pos_player):
     """
-    Vérifie si le joueur ne se trouve pas au bord de la grille avec:
-    - 'grid' correspond à la grille
-    - 'pos_player' la position initiale du joueur
-    - 'gravity' la gravité à laquelle le joueur est soumis
+    Permet de jouer avec le personnage dans le monde
     """
-    dimension_grid = int(sqrt(len(grid)))
-    if gravity == "DOWN":
-        if not pos_player + dimension_grid > len(grid) - 1:
-            return False, pos_player + dimension_grid
-    elif gravity == "RIGHT":
-        if not (pos_player + 1) % dimension_grid == 0:
-            return False, pos_player + 1
-    elif gravity == "UP":
-        if not pos_player - dimension_grid < 0:
-            return False, pos_player - dimension_grid
-    elif gravity == "LEFT":
-        if not (pos_player - 1) % dimension_grid == dimension_grid - 1:
-            return False, pos_player - 1
-    return True, None
+    limit, new_pos = shift_player(grid, pos_player, direction)
+    if not limit:
+        if grid[str(new_pos)][0][0] != 0:
+            grid[str(pos_player)][1] = None
+            grid[str(new_pos)][1] = 'DOWN'
+            pos_player = new_pos
+    return grid, pos_player
 
-def play_game(grid, gravity, pos_player):
+def in_case_level(grid, event, pos_player):
     """
-    Permet de déplacer le joueur par rapport à la gravité
-    et bloque la capacité de modifier la gravité si il est
-    en mouvement
+    Permet de savoir si le joueur se trouve sur une case niveau
+    """
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_RETURN:
+            if grid[str(pos_player)][0][0] == -2:
+                return True
+    return False
+
+def get_order_level(coord_modif, order, grid):
+    """
+    Permet d'avoir l'ordre d'accomplissement des niveaux avec:
+        - 'coord_modif' la case qui à subit une modification
+        - 'order' l'ordre des niveaux actuel
+        - 'grid' la grille de jeu
+    """
+    level_enter_count = 0
+    for case in grid:
+        if case != 'order':
+            if grid[case][0][0] == -2:
+                level_enter_count += 1
+    if len(order) < level_enter_count:
+        order.append(coord_modif)
+    if len(order) > level_enter_count:
+        new_order = []
+        for case in order:
+            if case != coord_modif:
+                new_order.append(case)
+        return new_order
+    return order
+
+def play_level(grid, gravity, pos_player):
+    """
+    Permet de jouer avec le personnage dans le niveau
     """
     coin = 0
     limit, new_pos = shift_player(grid, pos_player, gravity)
@@ -207,37 +234,65 @@ def play_game(grid, gravity, pos_player):
         lock = False
     return grid, pos_player, (lock, coin)
 
-def set_pos_player(grid, gravity):
+def shift_player(grid, pos_player, direction):
+    """
+    Permet de déplacer le joueur dans la grille en vérifiant
+    si le joueur ne se trouve pas au bord de cette grille avec:
+    - 'grid' correspond à la grille
+    - 'pos_player' la position initiale du joueur
+    - 'gravity' la gravité à laquelle le joueur est soumis
+    """
+    dimension_grid = int(sqrt(len(grid)))
+    if direction == "DOWN":
+        if not pos_player + dimension_grid > len(grid) - 1:
+            return False, pos_player + dimension_grid
+    elif direction == "RIGHT":
+        if not (pos_player + 1) % dimension_grid == 0:
+            return False, pos_player + 1
+    elif direction == "UP":
+        if not pos_player - dimension_grid < 0:
+            return False, pos_player - dimension_grid
+    elif direction == "LEFT":
+        if not (pos_player - 1) % dimension_grid == dimension_grid - 1:
+            return False, pos_player - 1
+    return True, None
+
+def set_pos_player(grid, gravity, mode):
     """
     Remplace la zone d'apparition par le joueur et
     renvoie son emplacement lors de l'initialisation
     """
     place = None
+    if mode == 'level':
+        start = 1
+    else:
+        start = -4
     for value in grid:
-        if grid[value][0][0] == 1:
-            place = int(value)
-            grid[value][1] = gravity
+        if value != 'order':
+            if grid[value][0][0] == start:
+                place = int(value)
+                grid[value][1] = gravity
     return grid, place
 
-def set_gravity(event, gravity):
+def set_gravity(event):
     """
     Renvoie la gravité par rapport à la flèche choisit
     """
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_UP:
-            return 'UP'
+            return True, 'UP'
         if event.key == pygame.K_RIGHT:
-            return 'RIGHT'
+            return True, 'RIGHT'
         if event.key == pygame.K_DOWN:
-            return 'DOWN'
+            return True, 'DOWN'
         if event.key == pygame.K_LEFT:
-            return 'LEFT'
-    return gravity
+            return True, 'LEFT'
+    return False, None
 
 def verif_level_save(grid, name_save):
     """
     Permet de voir si il n'y a pas
-    d'erreur pour le sauvegarder
+    d'erreur pour sauvegarder le niveau
     """
     count_enter = 0
     for case in grid:
@@ -247,19 +302,48 @@ def verif_level_save(grid, name_save):
     if count_enter < 1:
         return 1
     # Trop d'entrée
-    elif count_enter > 1:
+    if count_enter > 1:
         return 2
     # Nom non complété
-    elif len(name_save) == 0:
+    if len(name_save) == 0:
         return 3
     # Nom trop court
-    elif len(name_save) < 3:
+    if len(name_save) < 3:
         return 4
     # Tout est bon
-    else:
-        return 0
+    return '0l'
 
-def verif_level_load(name_load, mode):
+def verif_world_save(grid, name_save):
+    """
+    Permet de voir si il n'y a pas
+    d'erreur pour sauvegarder le niveau
+    """
+    count_enter = 0
+    count_level = 0
+    for case in grid:
+        if case != 'order':
+            if grid[case][0][0] == -4:
+                count_enter += 1
+            if grid[case][0][0] == -2:
+                count_level += 1
+    # Pas d'entrée
+    if count_enter < 1:
+        return 1
+    # Trop d'entrée
+    if count_enter > 1:
+        return 2
+    if len(name_save) == 0:
+        return 3
+    # Nom trop court
+    if len(name_save) < 3:
+        return 4
+    # Pas de niveau
+    if count_level == 0:
+        return 5
+    # Tout est bon
+    return '0w'
+
+def verif_build_load(name_load, mode):
     """
     Permet de vérifier si 'name_load' répond aux attentes
     """

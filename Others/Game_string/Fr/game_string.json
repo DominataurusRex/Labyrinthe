@@ -18,8 +18,11 @@
  "Exit_code_-3": "- La valeur saisie doit être un entier -",
  "Exit_code_-2": "- Dimension comprise entre 10x10 et 20x20 -",
  "Exit_code_-1": "- Fichier introuvable -",
- "Exit_code_0": "- Niveau sauvegardé -",
+ "Exit_code_0l": "- Niveau sauvegardé -",
+ "Exit_code_0w": "- Monde sauvegardé -",
  "Exit_code_1": "- Il n'y a pas assez d'entrée -",
  "Exit_code_2": "- Il y a trop d'entrée -",
  "Exit_code_3": "- Nom de fichier requis -",
- "Exit_code_4": "- Nom de fichier trop court -"}
+ "Exit_code_4": "- Nom de fichier trop court -",
+ "Exit_code_5": "- Au moins un niveau requis -",
+ "Exit_code_6": "- Nom de niveau requis -"}

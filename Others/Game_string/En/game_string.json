@@ -18,8 +18,11 @@
  "Exit_code_-3": "- The value entered must be an integer -",
  "Exit_code_-2": "- Size between 10x10 and 20x20 -",
  "Exit_code_-1": "- File not found -",
- "Exit_code_0": "- Saved level -",
+ "Exit_code_0l": "- Saved level -",
+ "Exit_code_0w": "- Saved world -",
  "Exit_code_1": "- There is not enough entry -",
  "Exit_code_2": "- There is too much entry -",
  "Exit_code_3": "- File name required -",
- "Exit_code_4": "- File name too short -"}
+ "Exit_code_4": "- File name too short -",
+ "Exit_code_5": "- At least one level required -",
+ "Exit_code_6": "- Level name required -"}

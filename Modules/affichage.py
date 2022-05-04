@@ -5,8 +5,9 @@ import pygame
 
 from Modules.fonction import GameStrings, Button, Buttongrid, Text, InputBox
 from Modules.fonction import verif_size_window, save_game, load_game, create_new_grid, blit_grid
-from Modules.fonction import blit_appearance, create_button_build, play_game, set_gravity
-from Modules.fonction import set_pos_player, verif_level_save, verif_level_load, get_list_game
+from Modules.fonction import blit_appearance, create_button_build, play_level, in_case_level
+from Modules.fonction import play_world, set_gravity, set_pos_player, verif_level_save
+from Modules.fonction import verif_world_save, verif_build_load, get_list_game, get_order_level
 from Modules.constant import COLOR, COLOR_TURN, LANG
 
 game_strings = GameStrings(LANG)
@@ -63,7 +64,7 @@ def main_menu(window, color):
             # Bouton Jouer
             if list_button_menu[0].is_pressed(event):
                 proceed = False
-                play_menu(window, color, 'test')
+                play_world_menu(window, color, 'world1')
                 if pygame.get_init():
                     main_menu(window, color)
             # Bouton Build
@@ -86,11 +87,65 @@ def main_menu(window, color):
                 proceed = False
                 pygame.quit()
 
-# - - - - - play_menu - - - - -
+# - - - - - play_world_menu - - - - -
 
-def create_play_menu(window, color, grid, nbr_coins):
+def create_play_world_menu(window, color, grid, nbr_coins):
     """
-    Mise en place de la logique du 'play_menu' avec:
+    Mise en place de la logique du 'play_world_menu' avec:
+    - 'window' la fenêtre
+    - 'color' la couleur
+    - 'grid' la grille de jeu
+    - 'nbr_coins' le nombre de pièce
+    """
+    frame = pygame.Surface(window.get_size())
+    frame.blit(blit_grid(frame, grid),(0, 0))
+    blit_appearance(frame, color)
+
+    return_button = Button(window, (0.05, 0.05, 0.1, 0.08),
+                           game_strings.get_string('Return'), color[1])
+    return_button.draw(frame)
+
+    coin_display = Text(window, (0.2, 0.7, 0.08, 0.1), str(nbr_coins) + "x pt")
+    coin_display.draw(frame)
+
+    window.blit(frame, (0, 0))
+    pygame.display.flip()
+    return return_button
+
+def play_world_menu(window, color, name_game):
+    """
+    Affichage du 'play_world_menu'
+    """
+    grid = load_game(name_game, 'world')
+    grid, pos_player = set_pos_player(grid, 'DOWN', 'world')
+    nbr_coins = 0
+    return_button = create_play_world_menu(window, color, grid, nbr_coins)
+    proceed = True
+    while proceed:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+            if verif_size_window(window, event):
+                return_button = create_play_world_menu(window, color, grid, nbr_coins)
+            elif return_button.is_pressed(event):
+                proceed = False
+            elif set_gravity(event)[0]:
+                direction = set_gravity(event)[1]
+                grid, pos_player = play_world(grid, direction, pos_player)
+                return_button = create_play_world_menu(window, color, grid, nbr_coins)
+            elif in_case_level(grid, event, pos_player):
+                proceed = False
+                name_level = grid[str(pos_player)][0][1]
+                play_level_menu(window, color, name_level)
+                if pygame.get_init():
+                    play_world_menu(window, color, name_game)
+
+# - - - - - play_level_menu - - - - -
+
+def create_play_level_menu(window, color, grid, nbr_coins):
+    """
+    Mise en place de la logique du 'play_level_menu' avec:
     - 'window' la fenêtre
     - 'color' la couleur
     - 'grid' la grille de jeu
@@ -115,37 +170,38 @@ def create_play_menu(window, color, grid, nbr_coins):
     pygame.display.flip()
     return return_button, reset_button
 
-def play_menu(window, color, name_game):
+def play_level_menu(window, color, name_game):
     """
-    Affichage du 'play_menu'
+    Affichage du 'play_level_menu'
     """
     grid = load_game(name_game, 'level')
     gravity = 'DOWN'
-    grid, pos_player = set_pos_player(grid, gravity)
+    grid, pos_player = set_pos_player(grid, gravity, 'level')
     nbr_coins = 0
     proceed = True
     lock = False
     while proceed:
-        list_play_menu = create_play_menu(window, color, grid, nbr_coins)
+        list_play_level_menu = create_play_level_menu(window, color, grid, nbr_coins)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
             if verif_size_window(window, event):
                 pass
-            # Bouton Quitter
-            elif list_play_menu[0].is_pressed(event):
+            # Bouton Retour
+            elif list_play_level_menu[0].is_pressed(event):
                 proceed = False
             # Bouton Reset
-            elif list_play_menu[1].is_pressed(event):
+            elif list_play_level_menu[1].is_pressed(event):
                 grid = load_game(name_game, 'level')
                 gravity = 'DOWN'
-                grid, pos_player = set_pos_player(grid, gravity)
+                grid, pos_player = set_pos_player(grid, gravity, 'level')
                 nbr_coins = 0
             if not lock:
-                gravity = set_gravity(event, gravity)
+                if set_gravity(event)[0]:
+                    gravity = set_gravity(event)[1]
         # var -> (lock, nbr_coins)
-        grid, pos_player, var = play_game(grid, gravity, pos_player)
+        grid, pos_player, var = play_level(grid, gravity, pos_player)
         lock = var[0]
         nbr_coins += var[1]
 
@@ -227,6 +283,8 @@ def tinker_menu(window, color, mode):
                 list_button_tinker[4].draw(window)
                 pygame.display.flip()
 
+# - - - - - - - Fonction annexe - - - - - - -
+
 def tm_creation_button(display, button, grid_size, event):
     """
     Fonction annexe de 'tinker_menu'
@@ -234,6 +292,7 @@ def tm_creation_button(display, button, grid_size, event):
     - 'display' un 3-uples contenant:
         - 'window' la fenêtre
         - 'color' la couleur
+        - 'mode' le mode de jeu
     - 'button' le bouton à tester
     - 'size' la taille de la grille
     - 'event' la liste d'évenement pygame
@@ -242,7 +301,7 @@ def tm_creation_button(display, button, grid_size, event):
         try:
             grid_size = int(grid_size)
             if 10 <= grid_size <= 20:
-                grid = create_new_grid(grid_size)
+                grid = create_new_grid(grid_size, display[2])
                 if display[2] == 'level':
                     build_level_menu(display[0], display[1], grid)
                 else:
@@ -271,12 +330,12 @@ def tm_loading_button(display, button, name, event):
     - 'event' la liste d'évenement pygame
     """
     if button.is_pressed(event):
-        if verif_level_load(name, display[2]):
+        if verif_build_load(name, display[2]):
             grid = load_game(name, display[2])
             if display[2] == 'level':
                 build_level_menu(display[0], display[1], grid, name)
             else:
-                pass
+                build_world_menu(display[0], display[1], grid, name)
             return True
         popup_menu(display[0], display[1], 'window_exit', -1)
         create_tinker_menu(display[0], display[1])
@@ -306,7 +365,7 @@ def create_build_level_menu(window, color, grid, name_save):
     blit_appearance(frame, color, grid)
 
     # Bouton des blocs
-    button_block = create_button_build(frame)
+    button_block = create_button_build(frame, 'level')
     # Bouton retour
     return_button = Button(window, (0.05, 0.05, 0.1, 0.08),
                            game_strings.get_string('Return'), color[1])
@@ -348,7 +407,7 @@ def build_level_menu(window, color, grid, name_save=''):
             # Bouton Test
             elif bl_saving_menu(display, list_button_build_l[4], (grid, name_save), event):
                 proceed = False
-                play_menu(window, color, name_save)
+                play_level_menu(window, color, name_save)
                 if pygame.get_init():
                     build_level_menu(window, color, grid, name_save)
             # Zone de saisie entré
@@ -358,14 +417,13 @@ def build_level_menu(window, color, grid, name_save=''):
                 # Bouton Sauvegarde
                 bl_saving_menu(display, list_button_build_l[1], (grid, name_save), event)
                 # Changement de case
-                bl_change_box(display, list_button_build_l[2], (grid, name_save, rajout_case), event)
+                game = (grid, name_save, rajout_case)
+                bl_change_box(display, list_button_build_l[2], game, event)
                 # Button créateur
-                list_touch = list_button_build_l[3]
-                place = 1
-                for button in list_touch:
-                    if button.is_pressed(event):
+                list_button_touch = list_button_build_l[3]
+                for place in list_button_touch:
+                    if list_button_touch[place].is_pressed(event):
                         rajout_case = place
-                    place += 1
                 # Zone de saisie
                 list_button_build_l[5].interact(window, event)
                 list_button_build_l[5].draw(window)
@@ -393,7 +451,7 @@ def create_build_world_menu(window, color, grid, name_save):
     blit_appearance(frame, color, grid)
 
     # Bouton des blocs
-    button_block = create_button_build(frame)
+    button_block = create_button_build(frame, 'world')
     # Bouton retour
     return_button = Button(window, (0.05, 0.05, 0.1, 0.08),
                            game_strings.get_string('Return'), color[1])
@@ -405,9 +463,16 @@ def create_build_world_menu(window, color, grid, name_save):
 
     save_name_input = InputBox(window, (0.85, 0.15, 0.1, 0.08), name_save)
 
+    list_level_button = Button(window, (0.85, 0.37, 0.1, 0.18),
+                               "i", color[1])
+    list_level_button.draw(frame)
+
+    load_name_input = InputBox(window, (0.85, 0.57, 0.1, 0.08))
+
     window.blit(frame, (0, 0))
 
-    return return_button, save_button, grid_button, button_block, save_name_input
+    return (return_button, save_button, grid_button, button_block, save_name_input,
+            list_level_button, load_name_input)
 
 def build_world_menu(window, color, grid, name_save=''):
     """
@@ -415,6 +480,7 @@ def build_world_menu(window, color, grid, name_save=''):
     """
     list_button_build_w = create_build_world_menu(window, color, grid, name_save)
     rajout_case = 0
+    name_level_load = ''
     display = (window, color, 'world')
     proceed = True
     while proceed:
@@ -431,46 +497,67 @@ def build_world_menu(window, color, grid, name_save=''):
             # Zone de saisie entré
             elif list_button_build_w[4].return_pressed(event):
                 name_save = list_button_build_w[4].get_string()
+            # Bouton Information
+            elif list_button_build_w[5].is_pressed(event):
+                popup_menu(window, color, 'list_game', 'level')
+                list_button_build_w = create_build_world_menu(window, color, grid, name_save)
+            # Input Load
+            elif list_button_build_w[6].return_pressed(event):
+                name_level_load = list_button_build_w[6].get_string()
             if proceed:
                 # Bouton Sauvegarde
                 bl_saving_menu(display, list_button_build_w[1], (grid, name_save), event)
                 # Changement de case
-                bl_change_box(display, list_button_build_w[2], (grid, name_save, rajout_case), event)
+                game = (grid, name_save, rajout_case, name_level_load)
+                bl_change_box(display, list_button_build_w[2], game, event)
                 # Button créateur
-                list_touch = list_button_build_w[3]
-                place = 1
-                for button in list_touch:
-                    if button.is_pressed(event):
+                list_button_touch = list_button_build_w[3]
+                for place in list_button_touch:
+                    if list_button_touch[place].is_pressed(event):
                         rajout_case = place
-                    place += 1
                 # Zone de saisie
                 list_button_build_w[4].interact(window, event)
                 list_button_build_w[4].draw(window)
+                list_button_build_w[6].interact(window, event)
+                list_button_build_w[6].draw(window)
                 pygame.display.flip()
+
+# - - - - - - - Fonction annexe - - - - - - -
 
 def bl_change_box(display, button, game, event):
     """
     Fonction annexe des 'build_menu'
     Permet de changer l'objet dans la casse cliqué avec:
-    - 'display' un 2-uples avec:
+    - 'display' un 3-uples avec:
         - 'window' la fenêtre
         - 'color' la couleur
         - 'mode' le mode de création (level/world)
     - 'button' le bouton cliqué
-    - 'game' un 2-uples avec:
+    - 'game' un 5-uples avec:
         - 'grid' la grille de jeu
         - 'name_grid' le nom de la grille
         - 'new_case' l'objet à rajouté dans la case
+        - 'name_level' le nom du niveau quand c'est une case niveau à placer
     """
     if button.is_pressed(event):
         coord = button.get_coord()
         if game[0][str(coord)][0][0] == 0:
-            game[0][str(coord)] = ((game[2], None), game[0][str(coord)][1])
+            if game[2] == -2:
+                if game[3] != '':
+                    if verif_build_load(game[3], 'level'):
+                        game[0][str(coord)] = ((game[2], game[3]), game[0][str(coord)][1])
+                    else:
+                        popup_menu(display[0], display[1], 'window_exit', -1)
+                else:
+                    popup_menu(display[0], display[1], 'window_exit', 6)
+            else:
+                game[0][str(coord)] = ((game[2], None), game[0][str(coord)][1])
         else:
             game[0][str(coord)] = ((0, None), game[0][str(coord)][1])
         if display[2] == 'level':
-            create_build_world_menu(display[0], display[1], game[0], game[1])
+            create_build_level_menu(display[0], display[1], game[0], game[1])
         else:
+            game[0]['order'] = get_order_level(coord, game[0]['order'], game[0])
             create_build_world_menu(display[0], display[1], game[0], game[1])
 
 def bl_saving_menu(display, button, game, event):
@@ -488,9 +575,12 @@ def bl_saving_menu(display, button, game, event):
     - 'event' la liste d'évenement pygame
     """
     if button.is_pressed(event):
-        exit_code = verif_level_save(game[0], game[1])
+        if display[2] == 'level':
+            exit_code = verif_level_save(game[0], game[1])
+        else:
+            exit_code = verif_world_save(game[0], game[1])
         popup_menu(display[0], display[1], 'window_exit', exit_code)
-        if exit_code == 0:
+        if exit_code in ('0w', '0l'):
             save_game(game[1], display[2], game[0])
             if display[2] == 'level':
                 create_build_level_menu(display[0], display[1], game[0], game[1])
