@@ -95,30 +95,55 @@ def get_dimension_grid(window):
         return x_value
     return y_value
 
-def blit_grid(window, grid):
+def blit_grid(frame, grid):
     """
     Permet d'afficher la grille avec les objets
     avec comme argument :
-    - 'window' la fenêtre sur laquel afficher la grille
+    - 'frame' la fenêtre sur laquel afficher la grille
     - 'grid' la grille de jeu
     """
-    dimension_grid = get_dimension_grid(window)
-    frame = pygame.Surface(window.get_size())
+    dimension_grid = get_dimension_grid(frame)
     grid_size = int(sqrt(len(grid)))
     scale = int(dimension_grid / grid_size) + 1
-    window_w = (window.get_size())[0]
+    window_w = (frame.get_size())[0]
     for box in grid:
         if box != 'order':
             coordonne_box = int(box) // grid_size, int(box) % grid_size
             x_coord = (window_w - dimension_grid) / 2
             x_value = int(x_coord + (dimension_grid / grid_size) * coordonne_box[1])
             y_value = int((dimension_grid / grid_size) * coordonne_box[0])
-            if grid[box][0][0] != 0:
+            if grid[box][0][0] not in (-2, 0):
                 image = pygame.transform.scale(TEXTURE[grid[box][0][0]], (scale, scale))
                 frame.blit(image, (x_value + 1, y_value + 1))
             if grid[box][1] is not None:
                 image_player = pygame.transform.scale(TEXTURE[grid[box][1]], (scale, scale))
                 frame.blit(image_player, (x_value + 1, y_value + 1))
+    return frame
+
+def blit_level_case(frame, nbr_level, grid, mode=''):
+    """
+    Permet d'afficher les niveaux avec la couleur correspondante avec:
+    - 'frame' la fenêtre sur laquel afficher la grille
+    - 'nbr_level' le numéro du dernier niveau à faire
+    - 'grid' la grille de jeu
+    """
+    dimension_grid = get_dimension_grid(frame)
+    grid_size = int(sqrt(len(grid)))
+    scale = int(dimension_grid / grid_size) + 1
+    window_w = (frame.get_size())[0]
+    for level in range(len(grid['order'])):
+        coord_box = int(grid['order'][level]) // grid_size, int(grid['order'][level]) % grid_size
+        x_coord = (window_w - dimension_grid) / 2
+        x_value = int(x_coord + (dimension_grid / grid_size) * coord_box[1])
+        y_value = int((dimension_grid / grid_size) * coord_box[0])
+        if nbr_level - 1 == level or mode == 'edit':
+            level_texture = -2
+        elif nbr_level -1 < level:
+            level_texture = -1
+        else:
+            level_texture = 0
+        image = pygame.transform.scale(TEXTURE[level_texture], (scale, scale))
+        frame.blit(image, (x_value + 1, y_value + 1))
     return frame
 
 def blit_appearance(surface, color, grid=''):
@@ -221,9 +246,7 @@ def play_level(grid, gravity, pos_player):
     if not limit:
         if grid[str(new_pos)][0][0] != 3:
             # Pour les pièces
-            if grid[str(new_pos)][0][0] == 8:
-                coin = 1
-                grid[str(new_pos)][0][0] = 0
+            grid, coin = get_coin(grid, new_pos)
             grid[str(pos_player)][1] = None
             grid[str(new_pos)][1] = gravity
             pos_player = new_pos
@@ -232,7 +255,27 @@ def play_level(grid, gravity, pos_player):
             lock = False
     else:
         lock = False
-    return grid, pos_player, (lock, coin)
+    # Sortie atteinte
+    finish = get_finish(grid, pos_player)
+    return grid, pos_player, finish, (lock, coin)
+
+def get_finish(grid, pos_player):
+    """
+    Permet de détecter si le joueur est arrivé à la fin
+    """
+    if grid[str(pos_player)][0][0] == 2:
+        return True
+    return False
+
+def get_coin(grid, new_pos):
+    """
+    Permet la récupération des pièces
+    """
+    coin = 0
+    if grid[str(new_pos)][0][0] == 8:
+        coin = 1
+        grid[str(new_pos)][0][0] = 0
+    return grid, coin
 
 def shift_player(grid, pos_player, direction):
     """
