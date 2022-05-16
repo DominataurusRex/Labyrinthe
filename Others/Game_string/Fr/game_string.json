@@ -25,4 +25,7 @@
  "Exit_code_3": "- Nom de fichier requis -",
  "Exit_code_4": "- Nom de fichier trop court -",
  "Exit_code_5": "- Au moins un niveau requis -",
- "Exit_code_6": "- Nom de niveau requis -"}
+ "Exit_code_6": "- Nom de niveau requis -",
+ "Exit_code_7": "- Il n'y a pas assez de sortie -",
+ "Exit_code_8": "- Il y a trop de sortie -",
+ "Exit_code_9": "- Niveau terminé -"}

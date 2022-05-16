@@ -2,6 +2,7 @@
 Ce module s'occupe des différentes fonction nécessaire au bon fonctionnement du jeu
 """
 import json
+from multiprocessing.context import get_spawning_popen
 import os
 from math import sqrt
 import pygame
@@ -115,10 +116,27 @@ def blit_grid(frame, grid):
             if grid[box][0][0] not in (-2, 0):
                 image = pygame.transform.scale(TEXTURE[grid[box][0][0]], (scale, scale))
                 frame.blit(image, (x_value + 1, y_value + 1))
+            if grid[box][0][0] == 9:
+                blit_id_portal(frame, (grid, box), (x_value, y_value), scale)
             if grid[box][1] is not None:
                 image_player = pygame.transform.scale(TEXTURE[grid[box][1]], (scale, scale))
                 frame.blit(image_player, (x_value + 1, y_value + 1))
     return frame
+
+def blit_id_portal(frame, grid, coord, scale):
+    """
+    Permet d'afficher l'id du portail par dessus
+    """
+    for box in grid:
+        id_portal = grid[box][0][1]
+        rect = pygame.Rect(coord[0], coord[1],
+                        scale, scale)
+        font_size = get_font_size(round(rect.h * 0.6))
+        font = pygame.font.SysFont("Impact", font_size)
+        text_image = font.render(id_portal, 1, COLOR['WHITE'])
+        text_pos = text_image.get_rect(center=rect.center)
+        frame.blit(text_image, text_pos)
+    
 
 def blit_level_case(frame, nbr_level, grid, mode=''):
     """
@@ -244,9 +262,12 @@ def play_level(grid, gravity, pos_player):
     coin = 0
     limit, new_pos = shift_player(grid, pos_player, gravity)
     if not limit:
-        if grid[str(new_pos)][0][0] != 3:
+        if grid[str(new_pos)][0][0] not in (3, 4, 5, 11):
+            new_pos = get_portal(grid, new_pos)
             # Pour les pièces
             grid, coin = get_coin(grid, new_pos)
+            # Pour les switch
+            grid = get_switch(grid, new_pos)
             grid[str(pos_player)][1] = None
             grid[str(new_pos)][1] = gravity
             pos_player = new_pos
@@ -257,13 +278,25 @@ def play_level(grid, gravity, pos_player):
         lock = False
     # Sortie atteinte
     finish = get_finish(grid, pos_player)
-    return grid, pos_player, finish, (lock, coin)
+    # Joueur mort
+    if new_pos is not None:
+        kill = get_kill(grid, new_pos)
+        return grid, pos_player, finish, (lock, coin, kill)
+    return grid, pos_player, finish, (lock, coin, False)
 
 def get_finish(grid, pos_player):
     """
     Permet de détecter si le joueur est arrivé à la fin
     """
     if grid[str(pos_player)][0][0] == 2:
+        return True
+    return False
+
+def get_kill(grid, new_pos):
+    """
+    Permet de détecter si le joueur est sur le point de mourir
+    """
+    if grid[str(new_pos)][0][0] == 4:
         return True
     return False
 
@@ -276,6 +309,32 @@ def get_coin(grid, new_pos):
         coin = 1
         grid[str(new_pos)][0][0] = 0
     return grid, coin
+
+def get_switch(grid, new_pos):
+    """
+    Permet de détecter si le joueur passe sur un bouton
+    """
+    if grid[str(new_pos)][0][0] == 7:
+        for case in grid:
+            if grid[case][0][0] in (5, 6, 7):
+                grid[case][0][0] = grid[case][0][0] + 5
+    elif grid[str(new_pos)][0][0] == 12:
+        for case in grid:
+            if grid[case][0][0] in (10, 11, 12):
+                grid[case][0][0] = grid[case][0][0] - 5
+    return grid
+            
+def get_portal(grid, new_pos):
+    """
+    Permet de détecter si le joueur
+    passe à traver un portail
+    """
+    if grid[str(new_pos)][0][0] == 9:
+        id_portal = grid[str(new_pos)][0][1]
+        for case in grid:
+            if grid[case][0][1] == id_portal and case != str(new_pos):
+                return int(case)
+    return new_pos
 
 def shift_player(grid, pos_player, direction):
     """
@@ -338,15 +397,24 @@ def verif_level_save(grid, name_save):
     d'erreur pour sauvegarder le niveau
     """
     count_enter = 0
+    count_exit = 0
     for case in grid:
         if grid[case][0][0] == 1:
             count_enter += 1
+        if grid[case][0][0] == 2:
+            count_exit += 1
     # Pas d'entrée
     if count_enter < 1:
         return 1
     # Trop d'entrée
     if count_enter > 1:
         return 2
+    # Pas de sortie
+    if count_exit < 1:
+        return 7
+    # Trop de sortie
+    if count_exit > 1:
+        return 8
     # Nom non complété
     if len(name_save) == 0:
         return 3
