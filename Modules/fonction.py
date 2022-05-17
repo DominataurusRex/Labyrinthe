@@ -2,7 +2,6 @@
 Ce module s'occupe des différentes fonction nécessaire au bon fonctionnement du jeu
 """
 import json
-from multiprocessing.context import get_spawning_popen
 import os
 from math import sqrt
 import pygame
@@ -16,14 +15,13 @@ def get_font_size(font_height):
     """
     if font_height < 19:
         return 12
-    else:
-        i = 0
-        try:
-            while font_height > FONT_HEIGHT[i]:
-                i += 1
-        except IndexError:
-            pass
-        return i + 12
+    i = 0
+    try:
+        while font_height > FONT_HEIGHT[i]:
+            i += 1
+    except IndexError:
+        pass
+    return i + 12
 
 def verif_size_window(window, event):
     """
@@ -44,7 +42,7 @@ def save_game(name, folder, grid):
     """
     filename = "Others/Create_game/Save_" + folder + "/" + name + ".json"
 
-    with open(filename, "w") as file:
+    with open(filename, "w", encoding="utf-8") as file:
         json.dump(grid, file)
     file.close()
 
@@ -56,7 +54,7 @@ def load_game(name, folder):
     """
     filename = "Others/Create_game/Save_" + folder + "/" + name + ".json"
 
-    with open(filename) as file:
+    with open(filename, encoding="utf-8") as file:
         dict_grid = json.load(file)
     file.close()
     return dict_grid
@@ -96,7 +94,7 @@ def get_dimension_grid(window):
         return x_value
     return y_value
 
-def blit_grid(frame, grid):
+def blit_grid(frame, grid, portal_mode=False):
     """
     Permet d'afficher la grille avec les objets
     avec comme argument :
@@ -116,7 +114,7 @@ def blit_grid(frame, grid):
             if grid[box][0][0] not in (-2, 0):
                 image = pygame.transform.scale(TEXTURE[grid[box][0][0]], (scale, scale))
                 frame.blit(image, (x_value + 1, y_value + 1))
-            if grid[box][0][0] == 9:
+            if grid[box][0][0] == 9 and portal_mode:
                 blit_id_portal(frame, (grid, box), (x_value, y_value), scale)
             if grid[box][1] is not None:
                 image_player = pygame.transform.scale(TEXTURE[grid[box][1]], (scale, scale))
@@ -127,16 +125,15 @@ def blit_id_portal(frame, grid, coord, scale):
     """
     Permet d'afficher l'id du portail par dessus
     """
-    for box in grid:
-        id_portal = grid[box][0][1]
-        rect = pygame.Rect(coord[0], coord[1],
-                        scale, scale)
-        font_size = get_font_size(round(rect.h * 0.6))
-        font = pygame.font.SysFont("Impact", font_size)
-        text_image = font.render(id_portal, 1, COLOR['WHITE'])
-        text_pos = text_image.get_rect(center=rect.center)
-        frame.blit(text_image, text_pos)
-    
+    id_portal = grid[0][grid[1]][0][1]
+    rect = pygame.Rect(coord[0], coord[1],
+                    scale, scale)
+    font_size = get_font_size(round(rect.h * 0.6))
+    font = pygame.font.SysFont("Impact", font_size)
+    text_image = font.render(id_portal, 1, COLOR['WHITE'])
+    text_pos = text_image.get_rect(center=rect.center)
+    frame.blit(text_image, text_pos)
+
 
 def blit_level_case(frame, nbr_level, grid, mode=''):
     """
@@ -323,7 +320,7 @@ def get_switch(grid, new_pos):
             if grid[case][0][0] in (10, 11, 12):
                 grid[case][0][0] = grid[case][0][0] - 5
     return grid
-            
+
 def get_portal(grid, new_pos):
     """
     Permet de détecter si le joueur
@@ -381,13 +378,13 @@ def set_gravity(event):
     Renvoie la gravité par rapport à la flèche choisit
     """
     if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_UP:
+        if event.key in (pygame.K_UP, pygame.K_z):
             return True, 'UP'
-        if event.key == pygame.K_RIGHT:
+        if event.key in (pygame.K_RIGHT, pygame.K_d):
             return True, 'RIGHT'
-        if event.key == pygame.K_DOWN:
+        if event.key in (pygame.K_DOWN, pygame.K_s):
             return True, 'DOWN'
-        if event.key == pygame.K_LEFT:
+        if event.key in (pygame.K_LEFT, pygame.K_q):
             return True, 'LEFT'
     return False, None
 
@@ -405,24 +402,25 @@ def verif_level_save(grid, name_save):
             count_exit += 1
     # Pas d'entrée
     if count_enter < 1:
-        return 1
+        exit_code = 1
     # Trop d'entrée
     if count_enter > 1:
-        return 2
+        exit_code = 2
     # Pas de sortie
     if count_exit < 1:
-        return 7
+        exit_code = 7
     # Trop de sortie
     if count_exit > 1:
-        return 8
+        exit_code = 8
     # Nom non complété
     if len(name_save) == 0:
-        return 3
+        exit_code = 3
     # Nom trop court
     if len(name_save) < 3:
-        return 4
+        exit_code = 4
     # Tout est bon
-    return '0l'
+    exit_code = '0l'
+    return exit_code
 
 def verif_world_save(grid, name_save):
     """
@@ -439,20 +437,21 @@ def verif_world_save(grid, name_save):
                 count_level += 1
     # Pas d'entrée
     if count_enter < 1:
-        return 1
+        exit_code = 1
     # Trop d'entrée
     if count_enter > 1:
-        return 2
+        exit_code = 2
     if len(name_save) == 0:
-        return 3
+        exit_code = 3
     # Nom trop court
     if len(name_save) < 3:
-        return 4
+        exit_code = 4
     # Pas de niveau
     if count_level == 0:
-        return 5
+        exit_code = 5
     # Tout est bon
-    return '0w'
+    exit_code = '0w'
+    return exit_code
 
 def verif_build_load(name_load, mode):
     """

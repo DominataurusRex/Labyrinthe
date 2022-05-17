@@ -116,7 +116,7 @@ def create_play_world_menu(display, grid, nbr_level, nbr_coins):
     pygame.display.flip()
     return return_button
 
-def play_world_menu(display, name_game, level_order=4, nbr_coins=0):
+def play_world_menu(display, name_game, level_order=1, nbr_coins=0):
     """
     Affichage du 'play_world_menu'
     """
@@ -187,7 +187,7 @@ def play_level_menu(window, color, name_game):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                return 0
+                return 0, 0
             if verif_size_window(window, event):
                 pass
             # Bouton Retour
@@ -403,7 +403,7 @@ def create_build_level_menu(window, color, grid, name_save):
     grid_button = Buttongrid(window, grid)
 
     # Affiche la grille de jeu
-    blit_grid(frame, grid)
+    blit_grid(frame, grid, True)
 
     # Bordure du niveau
     blit_appearance(frame, color, grid)
@@ -494,7 +494,7 @@ def create_build_world_menu(window, color, grid, name_save):
 
     # Bordure du niveau
     blit_appearance(frame, color, grid)
-    
+
     # Bouton des blocs
     button_block = create_button_build(frame, 'world')
     # Bouton retour
