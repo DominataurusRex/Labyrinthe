@@ -58,6 +58,10 @@ def level_init():
     texture['LEFT'] = image_charac.subsurface((32, 0, 32, 32))
     texture['RIGHT'] = image_charac.subsurface((0, 32, 32, 32))
     texture['UP'] = image_charac.subsurface((32, 32, 32, 32))
+    texture['compass_DOWN'] = pygame.image.load("Image/arrow_down.png")
+    texture['compass_LEFT'] = pygame.image.load("Image/arrow_left.png")
+    texture['compass_RIGHT'] = pygame.image.load("Image/arrow_right.png")
+    texture['compass_UP'] = pygame.image.load("Image/arrow_up.png")
     return texture
 
 TEXTURE = level_init()

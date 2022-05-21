@@ -34,6 +34,12 @@ def verif_size_window(window, event):
         return True
     return False
 
+def return_with_echap(event):
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_ESCAPE:
+            return False
+    return True
+
 def save_game(name, folder, grid):
     """
     Permet de sauvegarder 'grid' de forme dico en format json
@@ -184,6 +190,11 @@ def blit_appearance(surface, color, grid=''):
     line_3 = Line(surface, (0.8, 0, 0.8, 0.7), color[1])
     line_3.draw(surface)
 
+def gravity_compass(surface, gravity):
+    compass = TEXTURE['compass_' + str(gravity)]
+    compass_image = Buttonimage(surface, (0.81, 0.2, 0.18), compass)
+    compass_image.draw(surface, False)
+
 def create_button_build(surface, mode):
     """
     Permet d'afficher le boutons permettant de choisir
@@ -257,6 +268,7 @@ def play_level(grid, gravity, pos_player):
     Permet de jouer avec le personnage dans le niveau
     """
     coin = 0
+    grid[str(pos_player)][1] = gravity
     limit, new_pos = shift_player(grid, pos_player, gravity)
     if not limit:
         if grid[str(new_pos)][0][0] not in (3, 4, 5, 11):
@@ -638,12 +650,13 @@ class Buttonimage:
         scale = self.w_value
         self.image = pygame.transform.scale(self.image, (scale, scale))
 
-    def draw(self, surface):
+    def draw(self, surface, border=True):
         """
         Permet d'afficher le bouton carré avec l'image
         """
         surface.blit(self.image, (self.x_value, self.y_value))
-        pygame.draw.rect(surface, self.color, self.rect, 2)
+        if border:
+            pygame.draw.rect(surface, self.color, self.rect, 2)
 
     def is_pressed(self, event):
         """

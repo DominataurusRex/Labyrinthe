@@ -8,14 +8,14 @@ from Modules.fonction import verif_size_window, save_game, load_game, create_new
 from Modules.fonction import blit_appearance, blit_level_case, create_button_build, play_level
 from Modules.fonction import in_case_level, play_world, set_gravity, set_pos_player
 from Modules.fonction import verif_level_save, verif_world_save, verif_build_load, get_list_game
-from Modules.fonction import get_order_level
+from Modules.fonction import get_order_level, return_with_echap, gravity_compass
 from Modules.constant import COLOR, COLOR_TURN, LANG
 
 game_strings = GameStrings(LANG)
 
 # - - - - - main_menu - - - - -
 
-def create_main_menu(window, color, mode):
+def create_main_menu(window):
     """
     Mise en place de la logique du 'main_menu' avec:
     - 'window' la fênetre
@@ -23,37 +23,34 @@ def create_main_menu(window, color, mode):
     """
     frame = pygame.Surface(window.get_size())
     play_button = Button(window, (0.35, 0.5, 0.3, 0.08),
-                         game_strings.get_string('Play'), color[1])
+                         game_strings.get_string('Play'), 'BLUE')
     play_button.draw(frame)
 
-    build_button = Button(window, (0.35, 0.6, 0.3, 0.08),
-                          game_strings.get_string('Create'), color[1])
-    build_button.draw(frame)
+    build_button_level = Button(window, (0.35, 0.6, 0.14, 0.08),
+                                game_strings.get_string('Level'), 'BLUE')
+    build_button_level.draw(frame)
 
-    color_text = (game_strings.get_string('Color') +
-                  game_strings.get_string(color[1]))
-    color_button = Button(window, (0.35, 0.7, 0.14, 0.08),
-                          color_text, color[1])
-    color_button.draw(frame)
+    build_button_world = Button(window, (0.51, 0.6, 0.14, 0.08),
+                                game_strings.get_string('World'), 'BLUE')
+    build_button_world.draw(frame)
 
-    change_mode_button = Button(window, (0.51, 0.7, 0.14, 0.08),
-                          game_strings.get_string(mode), color[1])
-    change_mode_button.draw(frame)
+    option_button = Button(window, (0.35, 0.7, 0.3, 0.08),
+                           game_strings.get_string('Rule'), 'BLUE')
+    option_button.draw(frame)
 
     exit_button = Button(window, (0.35, 0.8, 0.3, 0.08),
-                         game_strings.get_string('Quit'), color[1])
+                         game_strings.get_string('Quit'), 'BLUE')
     exit_button.draw(frame)
 
     window.blit(frame, (0, 0))
     pygame.display.flip()
-    return play_button, build_button, color_button, change_mode_button, exit_button
+    return play_button, build_button_level, build_button_world, option_button, exit_button
 
 def main_menu(window, color):
     """
     Affichage du 'main_menu'
     """
-    mode = 'level'
-    list_button_menu = create_main_menu(window, color, mode)
+    list_button_menu = create_main_menu(window)
     proceed = True
     while proceed:
         for event in pygame.event.get():
@@ -61,7 +58,7 @@ def main_menu(window, color):
                 proceed = False
                 pygame.quit()
             if verif_size_window(window, event):
-                list_button_menu = create_main_menu(window, color, mode)
+                list_button_menu = create_main_menu(window)
             # Bouton Jouer
             if list_button_menu[0].is_pressed(event):
                 proceed = False
@@ -71,22 +68,19 @@ def main_menu(window, color):
             # Bouton Build
             elif list_button_menu[1].is_pressed(event):
                 proceed = False
-                tinker_menu(window, color, mode)
-            # Bouton Option
-            elif list_button_menu[2].is_pressed(event):
-                color = (color[0] + 1, COLOR_TURN[color[0] % 4])
-                create_main_menu(window, color, mode)
+                tinker_menu(window, color, 'level')
             # Bouton Autre
+            elif list_button_menu[2].is_pressed(event):
+                proceed = False
+                tinker_menu(window, color, 'world')
+            # Bouton Option
             elif list_button_menu[3].is_pressed(event):
-                if mode == 'level':
-                    mode = 'world'
-                else:
-                    mode = 'level'
-                create_main_menu(window, color, mode)
+                pass
             # Bouton Quitter
-            elif list_button_menu[4].is_pressed(event):
+            elif list_button_menu[4].is_pressed(event) or not(return_with_echap(event)):
                 proceed = False
                 pygame.quit()
+
 
 # - - - - - play_world_menu - - - - -
 
@@ -126,6 +120,7 @@ def play_world_menu(display, name_game, level_order=1, nbr_coins=0):
     proceed = True
     while proceed:
         for event in pygame.event.get():
+            proceed = return_with_echap(event)
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
@@ -148,30 +143,33 @@ def play_world_menu(display, name_game, level_order=1, nbr_coins=0):
 
 # - - - - - play_level_menu - - - - -
 
-def create_play_level_menu(window, color, grid, nbr_coins):
+def create_play_level_menu(display, grid, nbr_coins, gravity):
     """
     Mise en place de la logique du 'play_level_menu' avec:
-    - 'window' la fenêtre
-    - 'color' la couleur
+    - 'display' un 2-uples comportant:
+        - 'window' la fenêtre
+        - 'color' la couleur
     - 'grid' la grille de jeu
     - 'nbr_coins' le nombre de pièce
+    - 'gravity' la gravité soumis par le joueur
     """
-    frame = pygame.Surface(window.get_size())
+    frame = pygame.Surface(display[0].get_size())
     blit_grid(frame, grid)
-    blit_appearance(frame, color)
+    gravity_compass(frame, gravity)
+    blit_appearance(frame, display[1])
 
-    return_button = Button(window, (0.05, 0.05, 0.1, 0.08),
-                           game_strings.get_string('Return'), color[1])
+    return_button = Button(display[0], (0.05, 0.05, 0.1, 0.08),
+                           game_strings.get_string('Return'), display[1][1])
     return_button.draw(frame)
 
-    reset_button = Button(window, (0.85, 0.05, 0.1, 0.08),
-                          game_strings.get_string('Reset'), color[1])
+    reset_button = Button(display[0], (0.85, 0.05, 0.1, 0.08),
+                          game_strings.get_string('Reset'), display[1][1])
     reset_button.draw(frame)
 
-    coin_display = Text(window, (0.2, 0.7, 0.08, 0.1), str(nbr_coins) + "x pt")
+    coin_display = Text(display[0], (0.2, 0.7, 0.08, 0.1), str(nbr_coins) + "x pt")
     coin_display.draw(frame)
 
-    window.blit(frame, (0, 0))
+    display[0].blit(frame, (0, 0))
     pygame.display.flip()
     return return_button, reset_button
 
@@ -180,11 +178,12 @@ def play_level_menu(window, color, name_game):
     Affichage du 'play_level_menu'
     """
     grid, gravity, pos_player, nbr_coins = load_level(name_game)
-    list_play_level_menu = create_play_level_menu(window, color, grid, nbr_coins)
+    list_play_level_menu = create_play_level_menu((window, color), grid, nbr_coins, gravity)
     lock = False
     proceed = True
     while proceed:
         for event in pygame.event.get():
+            proceed = return_with_echap(event)
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return 0, 0
@@ -203,7 +202,7 @@ def play_level_menu(window, color, name_game):
         grid, pos_player, finish, var = play_level(grid, gravity, pos_player)
         lock = var[0]
         nbr_coins += var[1]
-        list_play_level_menu = create_play_level_menu(window, color, grid, nbr_coins)
+        list_play_level_menu = create_play_level_menu((window, color), grid, nbr_coins, gravity)
         if finish:
             proceed = False
             popup_menu(window, color, 'window_exit', 9)
@@ -294,6 +293,7 @@ def tinker_menu(window, color, mode):
     grid_size = None
     while proceed:
         for event in pygame.event.get():
+            proceed = return_with_echap(event)
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
@@ -439,6 +439,7 @@ def build_level_menu(window, color, grid, name_save=''):
     proceed = True
     while proceed:
         for event in pygame.event.get():
+            proceed = return_with_echap(event)
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
@@ -530,6 +531,7 @@ def build_world_menu(window, color, grid, name_save=''):
     proceed = True
     while proceed:
         for event in pygame.event.get():
+            proceed = return_with_echap(event)
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
@@ -638,6 +640,10 @@ def bl_saving_menu(display, button, game, event):
             create_build_world_menu(display[0], display[1], game[0], game[1])
     return False
 
+# - - - - - rule_menu - - - - -
+
+def create_rule_menu(window, color):
+    pass
 # - - - - - popup_menu - - - - -
 
 def create_window_exit_menu(window, color, exit_code):
@@ -707,6 +713,7 @@ def popup_menu(window, color, name_menu, other=''):
         elif name_menu == 'window_exit':
             create_window_exit_menu(window, color, other)
         for event in pygame.event.get():
+            proceed = return_with_echap(event)
             if event.type == pygame.VIDEORESIZE:
                 window_w, window_h = window.get_size()
                 if window_w < 500 or window_h < 250:
@@ -714,3 +721,7 @@ def popup_menu(window, color, name_menu, other=''):
             # Bouton Retour
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 proceed = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    proceed = False
+
