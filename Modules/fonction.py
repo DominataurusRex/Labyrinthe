@@ -2,6 +2,7 @@
 Ce module s'occupe des différentes fonction nécessaire au bon fonctionnement du jeu
 """
 import json
+from lib2to3.pygram import python_symbols
 import os
 from math import sqrt
 import pygame
@@ -183,14 +184,36 @@ def blit_appearance(surface, color, grid=''):
                 pygame.draw.rect(surface, COLOR['WHITE'], corner)
     outline = pygame.Rect(start_grid, 0, dimension_grid + 1, dimension_grid + 1)
     pygame.draw.rect(surface, COLOR['GRAY'], outline, 1)
-    line_1 = Line(surface, (0, 0.7, 1, 0.7), color[1])
+    line_1 = Line(surface, (0, 0.7, 1, 0.7), color)
     line_1.draw(surface)
-    line_2 = Line(surface, (0.2, 0, 0.2, 0.7), color[1])
+    line_2 = Line(surface, (0.2, 0, 0.2, 0.7), color)
     line_2.draw(surface)
-    line_3 = Line(surface, (0.8, 0, 0.8, 0.7), color[1])
+    line_3 = Line(surface, (0.8, 0, 0.8, 0.7), color)
     line_3.draw(surface)
 
+def blit_logo(surface):
+    """
+    Permet d'afficher le logo du jeu dans le menu principal
+    """
+    logo_image = TEXTURE['logo']
+    window_h, window_w = surface.get_size()
+    scale_x = 0.8 * window_h
+    scale_y = 0.3 * window_w
+    if scale_x > scale_y * 2:
+        scale = (scale_y * 2, scale_y)
+        pos_x = (window_h - scale_y * 2) // 2
+        pos_y = window_w * 0.1
+    else:
+        scale = (scale_x, scale_x // 2)
+        pos_x = (window_h - scale_x) // 2
+        pos_y = (window_w * 0.1) + ((scale_y - scale_x // 2) // 2)
+    logo_image = pygame.transform.scale(logo_image, scale)
+    surface.blit(logo_image, (pos_x, pos_y))
+
 def gravity_compass(surface, gravity):
+    """
+    Permet d'afficher correctement la boussole
+    """
     compass = TEXTURE['compass_' + str(gravity)]
     compass_image = Buttonimage(surface, (0.81, 0.2, 0.18), compass)
     compass_image.draw(surface, False)
@@ -407,6 +430,8 @@ def verif_level_save(grid, name_save):
     """
     count_enter = 0
     count_exit = 0
+    # Tout est bon
+    exit_code = '0l'
     for case in grid:
         if grid[case][0][0] == 1:
             count_enter += 1
@@ -430,8 +455,6 @@ def verif_level_save(grid, name_save):
     # Nom trop court
     if len(name_save) < 3:
         exit_code = 4
-    # Tout est bon
-    exit_code = '0l'
     return exit_code
 
 def verif_world_save(grid, name_save):
@@ -441,6 +464,8 @@ def verif_world_save(grid, name_save):
     """
     count_enter = 0
     count_level = 0
+    # Tout est bon
+    exit_code = '0w'
     for case in grid:
         if case != 'order':
             if grid[case][0][0] == -4:
@@ -461,8 +486,6 @@ def verif_world_save(grid, name_save):
     # Pas de niveau
     if count_level == 0:
         exit_code = 5
-    # Tout est bon
-    exit_code = '0w'
     return exit_code
 
 def verif_build_load(name_load, mode):

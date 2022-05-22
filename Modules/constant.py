@@ -16,8 +16,6 @@ COLOR = {'BLUE': (0, 59, 111),
          'DARK_GRAY': (47, 47, 47),
          'BLACK': (0, 0, 0)}
 
-COLOR_TURN = ['GREEN', 'YELLOW', 'RED', 'BLUE']
-
 LANG = 'En'
 
 FONT_HEIGHT = [19, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 35, 37,
@@ -54,6 +52,7 @@ def level_init():
             texture[place] = image_temp
             place += 1
     image_charac = pygame.image.load("Image/character.png")
+    texture['logo'] = pygame.image.load("Image/logo.png")
     texture['DOWN'] = image_charac.subsurface((0, 0, 32, 32))
     texture['LEFT'] = image_charac.subsurface((32, 0, 32, 32))
     texture['RIGHT'] = image_charac.subsurface((0, 32, 32, 32))
