@@ -2,7 +2,6 @@
 Ce module s'occupe des différentes fonction nécessaire au bon fonctionnement du jeu
 """
 import json
-from lib2to3.pygram import python_symbols
 import os
 from math import sqrt
 import pygame
@@ -118,7 +117,7 @@ def blit_grid(frame, grid, portal_mode=False):
             x_coord = (window_w - dimension_grid) / 2
             x_value = int(x_coord + (dimension_grid / grid_size) * coordonne_box[1])
             y_value = int((dimension_grid / grid_size) * coordonne_box[0])
-            if grid[box][0][0] not in (-2, 0):
+            if grid[box][0][0] not in (-3, 0):
                 image = pygame.transform.scale(TEXTURE[grid[box][0][0]], (scale, scale))
                 frame.blit(image, (x_value + 1, y_value + 1))
             if grid[box][0][0] == 9 and portal_mode:
@@ -159,11 +158,11 @@ def blit_level_case(frame, nbr_level, grid, mode=''):
         x_value = int(x_coord + (dimension_grid / grid_size) * coord_box[1])
         y_value = int((dimension_grid / grid_size) * coord_box[0])
         if nbr_level - 1 == level or mode == 'edit':
-            level_texture = -2
+            level_texture = -3
         elif nbr_level -1 < level:
-            level_texture = -1
+            level_texture = -2
         else:
-            level_texture = 0
+            level_texture = -1
         image = pygame.transform.scale(TEXTURE[level_texture], (scale, scale))
         frame.blit(image, (x_value + 1, y_value + 1))
     return frame
@@ -227,8 +226,8 @@ def create_button_build(surface, mode):
         place = 1
         end_place = 9
     else:
-        place =  -4
-        end_place = -2
+        place =  -5
+        end_place = -3
     button_return = {}
     for i in range(3):
         y_value = 0.735 + ((0.045 + 0.04) * i)
@@ -254,16 +253,6 @@ def play_world(grid, direction, pos_player):
             pos_player = new_pos
     return grid, pos_player
 
-def in_case_level(grid, event, pos_player):
-    """
-    Permet de savoir si le joueur se trouve sur une case niveau
-    """
-    if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_RETURN:
-            if grid[str(pos_player)][0][0] == -2:
-                return True
-    return False
-
 def get_order_level(coord_modif, order, grid):
     """
     Permet d'avoir l'ordre d'accomplissement des niveaux avec:
@@ -274,7 +263,7 @@ def get_order_level(coord_modif, order, grid):
     level_enter_count = 0
     for case in grid:
         if case != 'order':
-            if grid[case][0][0] == -2:
+            if grid[case][0][0] == -3:
                 level_enter_count += 1
     if len(order) < level_enter_count:
         order.append(coord_modif)
@@ -400,7 +389,7 @@ def set_pos_player(grid, gravity, mode):
     if mode == 'level':
         start = 1
     else:
-        start = -4
+        start = -5
     for value in grid:
         if value != 'order':
             if grid[value][0][0] == start:
@@ -468,9 +457,9 @@ def verif_world_save(grid, name_save):
     exit_code = '0w'
     for case in grid:
         if case != 'order':
-            if grid[case][0][0] == -4:
+            if grid[case][0][0] == -5:
                 count_enter += 1
-            if grid[case][0][0] == -2:
+            if grid[case][0][0] == -3:
                 count_level += 1
     # Pas d'entrée
     if count_enter < 1:
@@ -806,17 +795,6 @@ class InputBox:
                     self.text += event.unicode
                 self.resize(window)
             self.text_surface = self.font.render(self.text, True, COLOR['WHITE'])
-
-    def return_pressed(self, event):
-        """
-        Renvoie 'True' si la touche Return est pressé,
-        sinon renvoie 'False'
-        """
-        if event.type == pygame.KEYDOWN:
-            if self.active:
-                if event.key == pygame.K_RETURN:
-                    return True
-        return False
 
     def get_string(self):
         """

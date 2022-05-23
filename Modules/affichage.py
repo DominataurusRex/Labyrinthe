@@ -6,7 +6,7 @@ import pygame
 from Modules.fonction import GameStrings, Button, Buttongrid, Text, InputBox
 from Modules.fonction import verif_size_window, save_game, load_game, create_new_grid, blit_grid
 from Modules.fonction import blit_appearance, blit_level_case, create_button_build, play_level
-from Modules.fonction import in_case_level, play_world, set_gravity, set_pos_player
+from Modules.fonction import play_world, set_gravity, set_pos_player
 from Modules.fonction import verif_level_save, verif_world_save, verif_build_load, get_list_game
 from Modules.fonction import get_order_level, return_with_echap, gravity_compass, blit_logo
 from Modules.constant import COLOR, LANG
@@ -125,7 +125,7 @@ def play_world_menu(window, name_game, level_order=1, nbr_coins=0):
                 direction = set_gravity(event)[1]
                 grid, pos_player = play_world(grid, direction, pos_player)
                 return_button = create_play_world_menu(window, grid, level_order, nbr_coins)
-            elif in_case_level(grid, event, pos_player):
+            elif in_case_level(window, grid, event, pos_player):
                 level_end, add_coins = run_level(window, pos_player, grid, level_order)
                 if level_end != -1:
                     proceed = False
@@ -218,12 +218,29 @@ def run_level(window, pos_player, grid, level_order):
         if grid['order'][level] == pos_player:
             name_level = grid[str(pos_player)][0][1]
             level_end, add_coins = play_level_menu(window, name_level)
-            # 2
             if level_order - 1 < len(grid['order']):
                 if grid['order'][level_order - 1] == pos_player:
                     return level_end, add_coins
             return 0, add_coins
     return -1, 0
+
+def in_case_level(window, grid, event, pos_player):
+    """
+    Permet de savoir si le joueur se trouve sur une case niveau
+    """
+    if grid[str(pos_player)][0][0] == -3:
+        name = grid[str(pos_player)][0][1]
+        name_level = Button(window, (0.35, 0.75, 0.3, 0.1),
+                            name, 'GRAY')
+        enter_button = Button(window, (0.35, 0.85, 0.3, 0.1),
+                              game_strings.get_string('Level_enter'), 'GRAY')
+        name_level.draw(window)
+        enter_button.draw(window)
+        pygame.display.flip()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                return True
+    return False
 
 def load_level(name_game):
     """
@@ -277,10 +294,11 @@ def tinker_menu(window, mode):
     name_load = ''
     list_button_tinker = create_tinker_menu(window)
     proceed = True
-    grid_size = None
     while proceed:
         for event in pygame.event.get():
             proceed = return_with_echap(event)
+            grid_size = list_button_tinker[1].get_string()
+            name_load = list_button_tinker[4].get_string()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
@@ -290,9 +308,6 @@ def tinker_menu(window, mode):
             elif list_button_tinker[0].is_pressed(event):
                 proceed = False
                 main_menu(window)
-            # Input Taille
-            elif list_button_tinker[1].return_pressed(event):
-                grid_size = list_button_tinker[1].get_string()
             # Bouton Creer
             elif tm_creation_button((window, mode), list_button_tinker[2], grid_size, event):
                 proceed = False
@@ -300,9 +315,6 @@ def tinker_menu(window, mode):
             elif list_button_tinker[3].is_pressed(event):
                 popup_menu(window, 'list_game', mode)
                 list_button_tinker = create_tinker_menu(window)
-            # Input Load
-            elif list_button_tinker[4].return_pressed(event):
-                name_load = list_button_tinker[4].get_string()
             # Bouton Load
             elif tm_loading_button((window, mode), list_button_tinker[5], name_load, event):
                 proceed = False
@@ -424,6 +436,7 @@ def build_level_menu(window, grid, name_save=''):
     while proceed:
         for event in pygame.event.get():
             proceed = return_with_echap(event)
+            name_save = list_button_build_l[5].get_string()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
@@ -439,9 +452,6 @@ def build_level_menu(window, grid, name_save=''):
                 play_level_menu(window, name_save)
                 if pygame.get_init():
                     build_level_menu(window, grid, name_save)
-            # Zone de saisie entré
-            elif list_button_build_l[5].return_pressed(event):
-                name_save = list_button_build_l[5].get_string()
             if proceed:
                 # Bouton Sauvegarde
                 bl_saving_menu(display, list_button_build_l[1], (grid, name_save), event)
@@ -515,6 +525,8 @@ def build_world_menu(window, grid, name_save=''):
     while proceed:
         for event in pygame.event.get():
             proceed = return_with_echap(event)
+            name_save = list_button_build_w[4].get_string()
+            name_level_load = list_button_build_w[6].get_string()
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return
@@ -524,16 +536,10 @@ def build_world_menu(window, grid, name_save=''):
             elif list_button_build_w[0].is_pressed(event):
                 proceed = False
                 tinker_menu(window, 'world')
-            # Zone de saisie entré
-            elif list_button_build_w[4].return_pressed(event):
-                name_save = list_button_build_w[4].get_string()
             # Bouton Information
             elif list_button_build_w[5].is_pressed(event):
-                popup_menu(window, color, 'list_game', 'level')
+                popup_menu(window, 'list_game', 'level')
                 list_button_build_w = create_build_world_menu(window, grid, name_save)
-            # Input Load
-            elif list_button_build_w[6].return_pressed(event):
-                name_level_load = list_button_build_w[6].get_string()
             if proceed:
                 # Bouton Sauvegarde
                 bl_saving_menu(display, list_button_build_w[1], (grid, name_save), event)
@@ -571,7 +577,7 @@ def bl_change_box(display, button, game, event):
     if button.is_pressed(event):
         coord = button.get_coord()
         if game[0][str(coord)][0][0] == 0:
-            if game[2] == -2:
+            if game[2] == -3:
                 if game[3] != '':
                     if verif_build_load(game[3], 'level'):
                         game[0][str(coord)] = ((game[2], game[3]), game[0][str(coord)][1])

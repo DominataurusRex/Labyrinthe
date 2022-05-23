@@ -12,8 +12,8 @@ COLOR = {'BLUE': (0, 59, 111),
          'RED': (207, 10, 29),
          'DARK_RED': (101, 5, 15),
          'WHITE': (255, 255, 255),
-         'GRAY': (96, 96, 96),
-         'DARK_GRAY': (47, 47, 47),
+         'GRAY': (48, 48, 48),
+         'DARK_GRAY': (24, 24, 24),
          'BLACK': (0, 0, 0)}
 
 LANG = 'En'
@@ -44,7 +44,7 @@ def level_init():
     image = pygame.image.load("Image/level_texture.png")
     x_value = image.get_width()
     y_value = image.get_height()
-    place = -4
+    place = -5
     texture = {}
     for height in range(y_value // 32):
         for width in range(x_value // 32):
